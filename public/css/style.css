@@ -1,6 +1,6 @@
 /* Base Styles */
 html {
-    scroll-snap-type: y mandatory;
+    scroll-snap-type: y proximity; /* Changed from mandatory to proximity for smoother experience */
     scroll-behavior: smooth;
 }
 
@@ -14,12 +14,105 @@ body {
     overflow-x: hidden;
 }
 
+/* Animation Variables - Adding these at the top for global use */
+:root {
+    --ease-in-quad: cubic-bezier(0.55, 0.085, 0.68, 0.53);
+    --ease-in-cubic: cubic-bezier(0.55, 0.055, 0.675, 0.19);
+    --ease-in-out: cubic-bezier(0.645, 0.045, 0.355, 1);
+    --animation-duration: 0.8s;
+    --animation-delay-base: 0.1s;
+}
+
+/* Enhanced animation keyframes */
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(40px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes fadeInRight {
+    from {
+        opacity: 0;
+        transform: translateX(40px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+@keyframes fadeInLeft {
+    from {
+        opacity: 0;
+        transform: translateX(-40px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes slideInBottom {
+    from { transform: translateY(30px); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+}
+
+@keyframes pulseEffect {
+    0% { transform: scale(1); box-shadow: 0 4px 12px rgba(255, 158, 68, 0.3); }
+    50% { transform: scale(1.05); box-shadow: 0 8px 18px rgba(255, 158, 68, 0.4); }
+    100% { transform: scale(1); box-shadow: 0 4px 12px rgba(255, 158, 68, 0.3); }
+}
+
+@keyframes gentleFloat {
+    0% {
+        transform: translateY(0);
+    }
+    50% {
+        transform: translateY(-15px);
+    }
+    100% {
+        transform: translateY(0);
+    }
+}
+
+@keyframes sectionFadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+@keyframes navbarSlideDown {
+    from { transform: translateY(-100%); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+}
+
+@keyframes shimmer {
+    0% { background-position: -100% 0; }
+    100% { background-position: 200% 0; }
+}
+
+@keyframes rotateIn {
+    from { transform: rotate(-10deg) scale(0.9); opacity: 0; }
+    to { transform: rotate(0) scale(1); opacity: 1; }
+}
+
 /* Container for responsive design */
 .container {
     width: 90%;
     max-width: 1200px;
     margin: 0 auto;
     padding: 0 15px;
+    overflow: visible;
+    height: auto;
 }
 
 /* Navbar - Updated to fix the bottom shadow line */
@@ -35,6 +128,7 @@ body {
     box-shadow: none !important; /* Remove default box shadow */
     border-bottom: none !important; /* Remove any border */
     backdrop-filter: blur(5px);
+    animation: navbarSlideDown 0.5s var(--ease-in-out);
 }
 
 .navbar.scrolled {
@@ -109,7 +203,7 @@ body {
     width: 0%;
     height: 2px;
     background-color: #FF9E44; /* Softer orange */
-    transition: width 0.3s ease-in-out;
+    transition: width 0.3s var(--ease-in-out);
 }
 
 .navbar-nav .nav-link:hover::after {
@@ -155,12 +249,12 @@ body {
     box-shadow: none;
 }
 
-/* Hero Section */
+/* Hero Section - Improved Layout */
 .hero-section {
-    height: 100vh;
+    min-height: 100vh;
     display: flex;
     align-items: center;
-    padding: 0;
+    padding-top: 76px; /* Add padding to account for navbar */
     position: relative;
     overflow: hidden;
 }
@@ -173,20 +267,31 @@ body {
     display: flex;
     flex-direction: column;
     justify-content: center;
-    padding: 0 50px;
+    padding: 0;
     color: #2b2a29;
+}
+
+.hero-container {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: relative;
+    height: calc(100vh - 76px); /* Subtract navbar height */
+    padding: 2rem 0;
 }
 
 .rectangle-text {
     position: relative;
-    max-width: 55%; /* Increased from 500px to percentage */
+    max-width: 50%;
     z-index: 2;
-    margin-left: 5%;
-    animation: fadeInUp 1s ease-out;
+    padding-left: 2rem;
+    animation: fadeInUp var(--animation-duration) var(--ease-in-out);
+    opacity: 0;
+    animation-fill-mode: forwards;
 }
 
 .rectangle-text h1 {
-    font-size: 3.5rem; /* Increased size */
+    font-size: 3.5rem;
     font-weight: 700;
     margin-bottom: 25px;
     color: #333;
@@ -194,87 +299,116 @@ body {
 }
 
 .rectangle-text p {
-    font-size: 1.3rem; /* Increased size */
+    font-size: 1.3rem;
     margin-bottom: 30px;
     line-height: 1.6;
     color: #555;
     max-width: 90%;
 }
 
-/* Updated nurse image positioning */
+/* Fixed nurse image positioning */
 .rectangle-image {
-    position: absolute;
-    bottom: 0; /* Stick to bottom */
-    right: 10%;
+    position: relative; /* Changed from absolute */
     z-index: 1;
-    filter: drop-shadow(5px 10px 10px rgba(0, 0, 0, 0.2));
-    animation: fadeInRight 1s ease-out;
-    max-width: 45%; /* Increased size */
-    max-height: 90%; /* Control height */
+    max-width: 40%; /* Controlled max width */
+    height: auto;
     display: flex;
-    align-items: flex-end;
+    align-items: center;
+    justify-content: center;
+    animation: fadeInRight var(--animation-duration) var(--ease-in-cubic);
+    opacity: 0;
+    animation-fill-mode: forwards;
+    animation-delay: 0.2s;
+    margin-right: 2rem;
 }
 
 .rectangle-image img {
     max-width: 100%;
-    height: auto;
+    max-height: 80vh; /* Limit height to 80% of viewport height */
     object-fit: contain;
-    transform-origin: bottom center;
-}
-
-/* Add fade-in animations */
-@keyframes fadeInUp {
-    from {
-        opacity: 0;
-        transform: translateY(40px);
-    }
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
-}
-
-@keyframes fadeInRight {
-    from {
-        opacity: 0;
-        transform: translateX(40px);
-    }
-    to {
-        opacity: 1;
-        transform: translateX(0);
-    }
-}
-
-/* Replace existing float animation with gentle breathing animation */
-@keyframes gentleFloat {
-    0% {
-        transform: translateY(0);
-    }
-    50% {
-        transform: translateY(-15px);
-    }
-    100% {
-        transform: translateY(0);
-    }
-}
-
-.rectangle-image img {
+    transform-origin: center center;
     animation: gentleFloat 6s ease-in-out infinite;
+    filter: drop-shadow(0 10px 15px rgba(0, 0, 0, 0.15));
 }
 
-.book-appointment {
-    display: inline-block;
-    padding: 15px 35px; /* Larger button */
-    font-size: 1.1rem; /* Larger text */
-    background-color: #FF9E44;
-    color: #FFFAFA;
-    border: none;
-    border-radius: 30px;
-    font-weight: 600;
-    box-shadow: 0px 4px 12px rgba(255, 158, 68, 0.3);
-    transition: 0.3s ease-in-out;
-    text-decoration: none;
-    z-index: 2;
+/* Responsive adjustments for hero section */
+@media (max-width: 1200px) {
+    .rectangle-text h1 {
+        font-size: 3rem;
+    }
+    
+    .rectangle-text p {
+        font-size: 1.2rem;
+    }
+}
+
+@media (max-width: 992px) {
+    .hero-container {
+        flex-direction: column;
+        text-align: center;
+        padding-top: 2rem;
+    }
+    
+    .rectangle-text {
+        max-width: 90%;
+        padding-left: 0;
+        margin-bottom: 2rem;
+    }
+    
+    .rectangle-text p {
+        margin: 0 auto 30px;
+    }
+    
+    .rectangle-image {
+        max-width: 60%;
+        margin-right: 0;
+    }
+    
+    .rectangle-image img {
+        max-height: 50vh;
+    }
+}
+
+@media (max-width: 768px) {
+    .hero-section {
+        padding-top: 60px;
+    }
+    
+    .hero-container {
+        height: auto;
+        min-height: calc(100vh - 60px);
+        padding: 2rem 0;
+    }
+    
+    .rectangle-text h1 {
+        font-size: 2.5rem;
+    }
+    
+    .rectangle-image {
+        max-width: 70%;
+    }
+    
+    .rectangle-image img {
+        max-height: 40vh;
+    }
+}
+
+@media (max-width: 576px) {
+    .rectangle-text h1 {
+        font-size: 2rem;
+    }
+    
+    .rectangle-text p {
+        font-size: 1.1rem;
+    }
+    
+    .rectangle-image {
+        max-width: 80%;
+    }
+    
+    .rectangle-image img {
+        max-height: 35vh;
+    }
 }
 
 /* Content Layout */
@@ -404,13 +538,21 @@ section {
     scroll-snap-align: start;
     display: flex;
     align-items: center;
-    overflow: hidden;
+    overflow: visible !important;
     position: relative;
+    opacity: 1 !important;
+    animation: sectionFadeIn 1s var(--ease-in-out) forwards;
 }
+
+section:nth-child(1) { animation-delay: 0s; }
+section:nth-child(2) { animation-delay: 0.1s; }
+section:nth-child(3) { animation-delay: 0.2s; }
+section:nth-child(4) { animation-delay: 0.3s; }
+section:nth-child(5) { animation-delay: 0.4s; }
 
 .section-header {
     text-align: center;
-    margin-bottom: 50px;
+    margin-bottom: 30px;
 }
 
 .section-header h2 {
@@ -432,13 +574,20 @@ section {
     background: linear-gradient(to right, #FFFFF0, #FFF5EE); /* Ivory to Seashell */
     position: relative;
     overflow: hidden;
+    padding: 100px 0 !important;
+    height: auto !important;
+    min-height: 100vh;
 }
 
 .info-container {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
     gap: 30px;
+    width: 100%;
     margin-top: 40px;
+    position: relative;
+    z-index: 5;
+    opacity: 1 !important;
 }
 
 .info-card {
@@ -450,6 +599,10 @@ section {
     transition: all 0.3s ease;
     position: relative;
     overflow: hidden;
+    opacity: 1 !important;
+    transform: none !important;
+    min-height: unset;
+    height: auto;
 }
 
 .info-card::before {
@@ -481,11 +634,12 @@ section {
     display: flex;
     align-items: center;
     justify-content: center;
-    transition: all 0.3s ease;
+    transition: all 0.4s var(--ease-in-cubic);
 }
 
 .info-card:hover .info-icon {
     background: #FF9E44; /* Softer orange */
+    transform: scale(1.1);
 }
 
 .info-icon i {
@@ -545,26 +699,130 @@ section {
     text-decoration: none;
     font-size: 0.9rem;
     font-weight: 500;
-    transition: all 0.3s ease;
+    transition: all 0.4s var(--ease-in-out);
     border: 1px solid #F5F5DC;
+    position: relative;
+    overflow: hidden;
 }
 
 .directions-btn:hover {
     background: #FF9E44; /* Softer orange */
     color: white;
     border-color: #FF9E44;
+    transform: translateY(-3px);
+}
+
+.directions-btn::after {
+    content: '';
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    top: 0;
+    left: -100%;
+    background: rgba(255, 255, 255, 0.1);
+    transition: all 0.4s var(--ease-in-out);
+}
+
+.directions-btn:hover::after {
+    left: 100%;
+}
+
+/* Book Appointment Button - Enhanced Styling */
+.book-appointment {
+    display: inline-block;
+    padding: 14px 30px;
+    background: #FF9E44; /* Softer orange */
+    color: white;
+    border-radius: 30px;
+    text-decoration: none;
+    font-weight: 600;
+    font-size: 1rem;
+    letter-spacing: 0.5px;
+    transition: all 0.3s ease-in-out;
+    border: 2px solid #FF9E44;
+    box-shadow: 0 4px 15px rgba(255, 158, 68, 0.3);
+    position: relative;
+    overflow: hidden;
+    z-index: 1;
+}
+
+.book-appointment:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 25px rgba(255, 158, 68, 0.4);
+    color: white;
+    text-decoration: none;
+}
+
+.book-appointment:active {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 15px rgba(255, 158, 68, 0.4);
+}
+
+.book-appointment::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(to right, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.2), rgba(255, 255, 255, 0.1));
+    transform: translateX(-100%);
+    z-index: -1;
+    transition: transform 0.8s ease;
+}
+
+.book-appointment:hover::before {
+    transform: translateX(100%);
+}
+
+/* Additional shimmer overlay for button */
+.book-appointment-shimmer {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(to right, transparent 0%, rgba(255,255,255,0.2) 50%, transparent 100%);
+    background-size: 200% 100%;
+    animation: shimmer 2s infinite;
+    pointer-events: none;
+    z-index: 2;
+}
+
+@keyframes buttonPulse {
+    0% {
+        box-shadow: 0 4px 15px rgba(255, 158, 68, 0.3);
+    }
+    50% {
+        box-shadow: 0 8px 25px rgba(255, 158, 68, 0.5);
+    }
+    100% {
+        box-shadow: 0 4px 15px rgba(255, 158, 68, 0.3);
+    }
+}
+
+/* Apply the animation to the button */
+.book-appointment {
+    animation: buttonPulse 2s infinite;
 }
 
 /* Services Section */
 .services-section {
     background-color: #FFF5EE; /* Seashell color */
+    padding: 100px 0 !important;
+    height: auto !important;
+    min-height: 100vh;
 }
 
 .services-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
     gap: 30px;
+    width: 100%;
     margin-top: 40px;
+    position: relative;
+    z-index: 5;
+    opacity: 1 !important;
 }
 
 .service-card {
@@ -574,6 +832,14 @@ section {
     text-align: center;
     box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
     transition: transform 0.3s ease, box-shadow 0.3s ease;
+    min-height: unset;
+    height: auto;
+    display: flex;
+    flex-direction: column;
+    animation: fadeIn 0.8s var(--ease-in-quad) forwards;
+    animation-delay: calc(var(--card-index, 0) * 0.15s);
+    opacity: 1 !important;
+    transform: none !important;
 }
 
 .service-card:hover {
@@ -581,14 +847,34 @@ section {
     box-shadow: 0 15px 30px rgba(0, 0, 0, 0.1);
 }
 
+.service-card:nth-child(1) { --card-index: 1; }
+.service-card:nth-child(2) { --card-index: 2; }
+.service-card:nth-child(3) { --card-index: 3; }
+.service-card:nth-child(4) { --card-index: 4; }
+
 .service-icon {
     margin-bottom: 20px;
+    height: 60px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
 .service-icon img {
     width: 60px;
     height: 60px;
     object-fit: contain;
+}
+
+.service-icon i {
+    font-size: 2.5rem;
+    color: #666; /* For monochromatic theme */
+    transition: transform 0.4s var(--ease-in-cubic), color 0.4s var(--ease-in-out);
+}
+
+.service-card:hover .service-icon i {
+    transform: scale(1.1) rotate(5deg);
+    color: #444; /* Darker shade when hovered */
 }
 
 .service-card h3 {
@@ -607,6 +893,9 @@ section {
     background: linear-gradient(135deg, #FFF5EE, #FFFFF0); /* Gentle gradient background */
     position: relative;
     overflow: hidden;
+    padding: 100px 0 !important;
+    height: auto !important;
+    min-height: 100vh;
 }
 
 .features-section::before {
@@ -636,10 +925,12 @@ section {
 .features-container {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-    gap: 25px;
+    gap: 30px;
+    width: 100%;
     margin-top: 30px;
     position: relative;
-    z-index: 1;
+    z-index: 5;
+    opacity: 1 !important;
 }
 
 .feature-card {
@@ -652,8 +943,11 @@ section {
     display: flex;
     flex-direction: column;
     justify-content: space-between;
-    height: 100%;
+    height: auto;
     border-bottom: 3px solid transparent;
+    opacity: 1 !important;
+    transform: none !important;
+    min-height: unset;
 }
 
 .feature-card:hover {
@@ -671,11 +965,12 @@ section {
     align-items: center;
     justify-content: center;
     margin: 0 auto 20px;
-    transition: all 0.3s ease;
+    transition: all 0.4s var(--ease-in-cubic);
 }
 
 .feature-card:hover .feature-icon {
     background: #FF9E44; /* Softer orange */
+    transform: scale(1.1);
 }
 
 .feature-icon i {
@@ -711,25 +1006,51 @@ section {
     text-decoration: none;
     font-weight: 500;
     font-size: 0.9rem;
-    transition: all 0.3s ease;
+    transition: all 0.4s var(--ease-in-out);
     border: 1px solid #F5F5DC;
+    position: relative;
+    overflow: hidden;
 }
 
 .feature-btn:hover {
     background: #FF9E44; /* Softer orange */
     color: white;
     border-color: #FF9E44;
+    transform: translateY(-3px);
+}
+
+.feature-btn::after {
+    content: '';
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    top: 0;
+    left: -100%;
+    background: rgba(255, 255, 255, 0.1);
+    transition: all 0.4s var(--ease-in-out);
+}
+
+.feature-btn:hover::after {
+    left: 100%;
 }
 
 /* Testimonials Section */
 .testimonials-section {
     background-color: #FAEBD7; /* Antique white */
+    padding: 100px 0 !important;
+    height: auto !important;
+    min-height: 100vh;
 }
 
 .testimonials-container {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
     gap: 30px;
+    width: 100%;
+    margin-top: 40px;
+    position: relative;
+    z-index: 5;
+    opacity: 1 !important;
 }
 
 .testimonial-card {
@@ -737,6 +1058,10 @@ section {
     border-radius: 10px;
     padding: 30px;
     box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+    opacity: 1 !important;
+    transform: none !important;
+    min-height: unset;
+    height: auto;
 }
 
 .testimonial-content {
@@ -759,6 +1084,43 @@ section {
 .testimonial-author p {
     color: #777;
     font-size: 0.9rem;
+}
+
+/* Enhanced ease-in animations */
+
+/* Global animation properties */
+:root {
+    --ease-in-quad: cubic-bezier(0.55, 0.085, 0.68, 0.53);
+    --ease-in-cubic: cubic-bezier(0.55, 0.055, 0.675, 0.19);
+    --ease-in-out: cubic-bezier(0.645, 0.045, 0.355, 1);
+    --animation-duration: 0.8s;
+}
+
+/* New animation keyframes */
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes slideInBottom {
+    from { transform: translateY(30px); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+}
+
+@keyframes pulseEffect {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.05); }
+    100% { transform: scale(1); }
+}
+
+@keyframes sectionFadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+@keyframes navbarSlideDown {
+    from { transform: translateY(-100%); }
+    to { transform: translateY(0); }
 }
 
 /* Responsive Design */
@@ -820,6 +1182,10 @@ section {
     
     .info-container {
         grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    }
+
+    .services-grid {
+        grid-template-columns: repeat(2, 1fr);
     }
 }
 
@@ -1041,5 +1407,9 @@ section {
     .info-list li span {
         margin-right: 0;
         margin-bottom: 5px;
+    }
+
+    .services-grid {
+        grid-template-columns: 1fr;
     }
 }

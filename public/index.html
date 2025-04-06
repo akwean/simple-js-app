@@ -41,18 +41,18 @@
     </div>
 </nav>
 
-<!-- Hero Section - Full Height -->
+<!-- Hero Section - Improved Structure -->
 <section class="hero-section" id="home">
     <div class="full-width-rectangle">
-        <div class="container">
+        <div class="container hero-container">
             <div class="rectangle-text">
                 <h1>Welcome to BUPC Clinic</h1>
                 <p>Your health is our priority. We provide quality medical services to ensure your well-being.</p>
                 <a href="appointments.html" class="book-appointment">Book Appointment</a>
             </div>
-        </div>
-        <div class="rectangle-image">
-            <img src="images/Nurse.png" alt="Clinic Image">
+            <div class="rectangle-image">
+                <img src="images/Nurse.png" alt="Clinic Image">
+            </div>
         </div>
     </div>
 </section>
@@ -104,7 +104,7 @@
     </div>
 </section>
 
-<!-- Services Section (Moved to third position) -->
+<!-- Services Section - Updated content -->
 <section class="services-section" id="services">
     <div class="container">
         <div class="section-header">
@@ -114,24 +114,31 @@
         <div class="services-grid">
             <div class="service-card">
                 <div class="service-icon">
-                    <img src="images/checkup-icon.png" alt="Regular Checkup">
+                    <i class="fas fa-stethoscope"></i>
                 </div>
-                <h3>Regular Checkups</h3>
-                <p>Comprehensive health assessments to monitor your overall wellbeing.</p>
+                <h3>Medical Consultation & Treatment</h3>
+                <p>Professional medical consultations and treatments for all BUPC students and staff.</p>
             </div>
             <div class="service-card">
                 <div class="service-icon">
-                    <img src="images/emergency-icon.png" alt="Emergency Care">
+                    <i class="fas fa-clipboard-check"></i>
                 </div>
-                <h3>Emergency Care</h3>
-                <p>Immediate medical attention for unexpected health concerns.</p>
+                <h3>Physical Examination</h3>
+                <p>For athletic activities, OJT/internship, extra-curricular activities, and scholarship requirements.</p>
             </div>
             <div class="service-card">
                 <div class="service-icon">
-                    <img src="images/vaccination-icon.png" alt="Vaccinations">
+                    <i class="fas fa-tooth"></i>
                 </div>
-                <h3>Vaccinations</h3>
-                <p>Stay protected with our complete range of essential vaccines.</p>
+                <h3>Dental Consultation & Treatment</h3>
+                <p>Comprehensive dental care services to maintain your oral health.</p>
+            </div>
+            <div class="service-card">
+                <div class="service-icon">
+                    <i class="fas fa-syringe"></i>
+                </div>
+                <h3>Vaccination</h3>
+                <p>Annual free Flu & Pneumonia vaccinations to keep our community healthy.</p>
             </div>
         </div>
     </div>
@@ -248,49 +255,7 @@
 </footer>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-<script>
-    window.addEventListener("scroll", function() {
-        const navbar = document.querySelector(".navbar");
-        navbar.classList.toggle("scrolled", window.scrollY > 0);
-    });
-    
-    // Smooth scroll for navigation links
-    document.querySelectorAll('a[href^="#"]').forEach(anchor => {
-        anchor.addEventListener('click', function(e) {
-            e.preventDefault();
-            
-            const targetId = this.getAttribute('href');
-            if (targetId !== '#') {
-                document.querySelector(targetId).scrollIntoView({
-                    behavior: 'smooth'
-                });
-            }
-        });
-    });
-    
-    // Fix for navbar shadow line issue
-    document.addEventListener('DOMContentLoaded', function() {
-        const navbar = document.querySelector('.navbar');
-        
-        // Apply inline styles to override any Bootstrap defaults
-        navbar.style.boxShadow = 'none';
-        navbar.style.borderBottom = 'none';
-        
-        // Create a style element to add additional overrides
-        const style = document.createElement('style');
-        style.textContent = `
-            .navbar, .navbar.navbar-light, .navbar-expand-lg {
-                box-shadow: none !important;
-                border-bottom: none !important;
-                border: none !important;
-            }
-            .navbar::after, .navbar::before {
-                display: none !important;
-            }
-        `;
-        document.head.appendChild(style);
-    });
-</script>
+<script src="js/index.js"></script>
 
 </body>
 </html>
