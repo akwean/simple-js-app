@@ -181,7 +181,14 @@ body {
 }
 
 .navbar-nav {
+    display: flex;
+    align-items: center;
     margin-bottom: 0; /* Remove margin that might create lines */
+}
+
+.nav-item {
+    display: flex;
+    align-items: center;
 }
 
 .navbar-nav .nav-link {
@@ -214,39 +221,126 @@ body {
     color: #FF9E44 !important;
 }
 
+@media (min-width: 992px) {
+    .navbar-nav {
+        align-items: center;
+    }
+    
+    .nav-item {
+        height: 100%;
+        display: flex;
+        align-items: center;
+    }
+    
+    .nav-link {
+        padding-top: 0.5rem !important;
+        padding-bottom: 0.5rem !important;
+    }
+}
+
 .btn-signin {
     font-size: 0.9rem;
-    padding: 0.5rem 1.5rem;
+    padding: 0.6rem 1.5rem;
     border-radius: 30px;
-    transition: 0.3s ease-in-out;
-    background-color: #FAF0E6; /* Linen color - fixed hex code */
-    border: 1px solid #F5F5DC; /* Beige color */
-    color: #2b2a29;
+    background: linear-gradient(to right, #FF9E44, #FFA862);
+    color: white !important;
     font-weight: 600;
+    transition: all 0.3s ease;
+    display: inline-block;
+    border: none;
+    text-decoration: none !important; /* Remove underline */
+    box-shadow: 0 4px 15px rgba(255, 158, 68, 0.2);
+    margin-left: 0.5rem;
+    position: relative;
+    overflow: hidden;
 }
 
 .btn-signin:hover {
-    background: #FF9E44; /* Softer orange */
-    color: #FFFAFA; /* Snow color */
-    border-color: #FF9E44;
+    transform: translateY(-3px);
+    box-shadow: 0 8px 20px rgba(255, 158, 68, 0.3);
+    background: linear-gradient(to right, #FFA862, #FF9E44);
+    color: white !important;
+    text-decoration: none !important; /* Ensure no underline on hover */
 }
 
-/* Improved mobile navbar styles */
-.navbar-collapse {
-    transition: all 0.3s ease;
-    border: none !important; /* Remove any borders */
+.btn-signin .stars {
+    display: none;
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    top: 0;
+    left: 0;
+    pointer-events: none;
+    z-index: 1;
 }
 
-.navbar-toggler {
-    border: none;
-    padding: 0.25rem 0.5rem;
-    outline: none !important;
-    box-shadow: none !important;
-    background: transparent !important; /* Ensure transparent background */
+.btn-signin .stars::before,
+.btn-signin .stars::after {
+    content: '';
+    position: absolute;
+    width: 4px;
+    height: 4px;
+    border-radius: 50%;
+    background: #FFFDEF;
+    filter: drop-shadow(0 0 5px #FFFDEF);
+    animation: sparkle 1.5s infinite;
 }
 
-.navbar-toggler:focus {
-    box-shadow: none;
+.btn-signin .stars::before {
+    top: 20%;
+    left: 30%;
+    animation-delay: 0s;
+}
+
+.btn-signin .stars::after {
+    top: 60%;
+    right: 30%;
+    animation-delay: 0.3s;
+}
+
+.btn-signin:hover .stars {
+    display: block;
+    filter: drop-shadow(0 0 5px #FFFDEF);
+}
+
+.btn-signin .sparkle-1,
+.btn-signin .sparkle-2,
+.btn-signin .sparkle-3 {
+    position: absolute;
+    width: 3px;
+    height: 3px;
+    background: #FFFDEF;
+    border-radius: 50%;
+    opacity: 0;
+    filter: drop-shadow(0 0 4px #FFFDEF);
+    pointer-events: none;
+    z-index: 1;
+}
+
+.btn-signin .sparkle-1 {
+    top: 25%;
+    left: 15%;
+}
+
+.btn-signin .sparkle-2 {
+    top: 40%;
+    right: 20%;
+}
+
+.btn-signin .sparkle-3 {
+    bottom: 30%;
+    left: 40%;
+}
+
+@keyframes sparkle {
+    0%, 100% { 
+        opacity: 0;
+        transform: scale(0);
+    }
+    50% { 
+        opacity: 1;
+        transform: scale(1);
+    }
 }
 
 /* Hero Section - Improved Layout */
