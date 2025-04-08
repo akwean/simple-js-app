@@ -3,26 +3,61 @@ document.addEventListener('DOMContentLoaded', function() {
     const appointments = [
         { id: 1, patient: 'John Doe', date: '2025-04-10', time: '10:00 AM', status: 'pending' },
         { id: 2, patient: 'Jane Smith', date: '2025-04-11', time: '2:00 PM', status: 'approved' },
-        { id: 3, patient: 'Alice Johnson', date: '2025-04-12', time: '11:00 AM', status: 'pending' },
+        { id: 3, patient: 'Alice Johnson', date: '2025-04-10', time: '10:00 AM', status: 'pending' }, // Conflict example
         { id: 4, patient: 'Bob Brown', date: '2025-04-13', time: '3:00 PM', status: 'canceled' },
+        { id: 5, patient: 'Charlie Davis', date: '2025-04-12', time: '11:00 AM', status: 'pending' },
+        { id: 6, patient: 'Emily White', date: '2025-04-10', time: '10:00 AM', status: 'pending' }, // Conflict example
     ];
 
-    const appointmentList = document.querySelector('.appointment-list');
-    const filterDate = document.getElementById('filterDate');
-    const filterStatus = document.getElementById('filterStatus');
-    const filterPatient = document.getElementById('filterPatient');
-    const applyFiltersButton = document.getElementById('applyFilters');
+    const appointmentsPerPage = 5;
+    const newAppointmentsContainer = document.getElementById('newAppointments');
+    const upcomingAppointmentsContainer = document.getElementById('upcomingAppointments');
+    const conflictAppointmentsContainer = document.getElementById('conflictAppointments');
 
-    // Render appointments
-    function renderAppointments(filteredAppointments) {
-        appointmentList.innerHTML = '';
+    // Categorize appointments
+    function categorizeAppointments() {
+        const today = new Date('2025-04-08'); // Current date
+        const newAppointments = [];
+        const upcomingAppointments = [];
+        const conflicts = [];
 
-        if (filteredAppointments.length === 0) {
-            appointmentList.innerHTML = '<p class="text-center text-muted">No appointments found.</p>';
+        const appointmentMap = new Map();
+
+        appointments.forEach(appt => {
+            const apptDate = new Date(appt.date);
+            const key = `${appt.date}-${appt.time}`;
+
+            // Check for conflicts
+            if (appointmentMap.has(key)) {
+                conflicts.push(appt);
+                conflicts.push(appointmentMap.get(key));
+            } else {
+                appointmentMap.set(key, appt);
+            }
+
+            if (apptDate >= today && appt.status === 'pending') {
+                newAppointments.push(appt);
+            } else if (apptDate > today) {
+                upcomingAppointments.push(appt);
+            }
+        });
+
+        return { newAppointments, upcomingAppointments, conflicts: [...new Set(conflicts)] };
+    }
+
+    // Render appointments with pagination
+    function renderAppointments(container, appointments, page = 1) {
+        container.innerHTML = '';
+        const start = (page - 1) * appointmentsPerPage;
+        const end = start + appointmentsPerPage;
+        const paginatedAppointments = appointments.slice(start, end);
+
+        if (paginatedAppointments.length === 0) {
+            container.innerHTML = '<p class="text-center text-muted">No appointments found.</p>';
             return;
         }
 
-        filteredAppointments.forEach(appointment => {
+        paginatedAppointments.forEach(appointment => {
             const card = document.createElement('div');
             card.className = 'appointment-card';
             card.innerHTML = `
@@ -36,17 +71,27 @@ document.addEventListener('DOMContentLoaded', function() {
                     ${appointment.status === 'pending' ? `<button class="btn btn-reject" data-id="${appointment.id}">Reject</button>` : ''}
                 </div>
             `;
-            appointmentList.appendChild(card);
+            container.appendChild(card);
         });
 
-        // Add event listeners for approve/reject buttons
-        document.querySelectorAll('.btn-approve').forEach(button => {
-            button.addEventListener('click', () => handleApprove(button.dataset.id));
+        // Add pagination controls
+        const totalPages = Math.ceil(appointments.length / appointmentsPerPage);
+        renderPagination(container.nextElementSibling, totalPages, page, (newPage) => {
+            renderAppointments(container, appointments, newPage);
         });
+    }
 
-        document.querySelectorAll('.btn-reject').forEach(button => {
-            button.addEventListener('click', () => handleReject(button.dataset.id));
-        });
+    // Render pagination controls
+    function renderPagination(container, totalPages, currentPage, onPageChange) {
+        container.innerHTML = '';
+
+        for (let i = 1; i <= totalPages; i++) {
+            const button = document.createElement('button');
+            button.className = `btn btn-sm ${i === currentPage ? 'btn-primary' : 'btn-outline-primary'}`;
+            button.textContent = i;
+            button.addEventListener('click', () => onPageChange(i));
+            container.appendChild(button);
+        }
     }
 
     // Get badge color based on status
@@ -63,39 +108,14 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-    // Handle approve action
-    function handleApprove(id) {
-        const appointment = appointments.find(appt => appt.id == id);
-        if (appointment) {
-            appointment.status = 'approved';
-            renderAppointments(filterAppointments());
-        }
+    // Initialize dashboard
+    function initDashboard() {
+        const { newAppointments, upcomingAppointments, conflicts } = categorizeAppointments();
+
+        renderAppointments(newAppointmentsContainer, newAppointments);
+        renderAppointments(upcomingAppointmentsContainer, upcomingAppointments);
+        renderAppointments(conflictAppointmentsContainer, conflicts);
     }
 
-    // Handle reject action
-    function handleReject(id) {
-        const appointment = appointments.find(appt => appt.id == id);
-        if (appointment) {
-            appointment.status = 'canceled';
-            renderAppointments(filterAppointments());
-        }
-    }
-
-    // Filter appointments
-    function filterAppointments() {
-        return appointments.filter(appt => {
-            const matchesDate = !filterDate.value || appt.date === filterDate.value;
-            const matchesStatus = filterStatus.value === 'all' || appt.status === filterStatus.value;
-            const matchesPatient = !filterPatient.value || appt.patient.toLowerCase().includes(filterPatient.value.toLowerCase());
-            return matchesDate && matchesStatus && matchesPatient;
-        });
-    }
-
-    // Apply filters
-    applyFiltersButton.addEventListener('click', () => {
-        renderAppointments(filterAppointments());
-    });
-
-    // Initial render
-    renderAppointments(appointments);
+    initDashboard();
 });

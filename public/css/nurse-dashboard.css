@@ -23,7 +23,7 @@ body {
 
 .dashboard-header {
     text-align: center;
-    margin-bottom: 2rem;
+    margin-bottom: 3rem;
 }
 
 .dashboard-header h1 {
@@ -37,17 +37,21 @@ body {
     color: #555;
 }
 
+/* Modernized Nurse Dashboard Styles */
+
 .dashboard-content {
-    display: flex;
+    display: grid;
+    grid-template-columns: 1fr 2fr;
     gap: 2rem;
 }
 
 .filters {
     flex: 1;
     background: #FFFFFF;
-    padding: 1.5rem;
+    padding: 2rem;
     border-radius: 8px;
     box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+    gap: 1.5rem;
 }
 
 .filters h4 {
@@ -57,7 +61,7 @@ body {
 }
 
 .filter-group {
-    margin-bottom: 1rem;
+    margin-bottom: 1.5rem;
 }
 
 .filter-group label {
@@ -83,6 +87,7 @@ body {
     font-weight: 600;
     padding: 0.8rem;
     border-radius: 4px;
+    color: #fff;
     transition: background-color 0.3s ease;
 }
 
@@ -90,12 +95,13 @@ body {
     background-color: #FF7A00;
 }
 
+/* Appointment Cards */
 .appointments {
     flex: 2;
     background: #FFFFFF;
-    padding: 1.5rem;
-    border-radius: 8px;
-    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+    padding: 2rem;
+    border-radius: 12px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
 }
 
 .appointments h4 {
@@ -105,73 +111,101 @@ body {
 }
 
 .appointment-list {
-    display: flex;
-    flex-direction: column;
-    gap: 1rem;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 1.5rem;
 }
 
 .appointment-card {
     background: #FAFAFA;
-    padding: 1rem;
-    border-radius: 8px;
-    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+    padding: 1.8rem;
+    border-radius: 12px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
     display: flex;
+    flex-direction: column;
     justify-content: space-between;
-    align-items: center;
-    transition: box-shadow 0.3s ease;
+    gap: 1rem;
+    transition: box-shadow 0.3s ease, transform 0.3s ease;
 }
 
 .appointment-card:hover {
-    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+    transform: translateY(-5px);
 }
 
 .appointment-card .details {
-    flex: 1;
+    margin-bottom: 1.2rem;
 }
 
 .appointment-card .details h5 {
-    font-size: 1rem;
+    font-size: 1.2rem;
     font-weight: 600;
     margin: 0;
-    color: #333;
+    color: #2b2a29;
 }
 
 .appointment-card .details p {
-    font-size: 0.9rem;
+    font-size: 0.95rem;
     color: #555;
-    margin: 0.2rem 0;
+    margin: 0.3rem 0;
+}
+
+.appointment-card .details .badge {
+    font-size: 0.85rem;
+    padding: 0.4rem 0.7rem;
+    border-radius: 8px;
+}
+
+.badge-warning {
+    background-color: #FF9E44;
+    color: #fff;
+}
+
+.badge-success {
+    background-color: #28a745;
+    color: #fff;
+}
+
+.badge-danger {
+    background-color: #dc3545;
+    color: #fff;
 }
 
 .appointment-card .actions {
     display: flex;
     gap: 0.5rem;
+    justify-content: flex-end;
 }
 
 .appointment-card .actions button {
     font-size: 0.9rem;
-    padding: 0.5rem 1rem;
+    padding: 0.6rem 1.2rem;
     border: none;
-    border-radius: 4px;
+    border-radius: 8px;
     cursor: pointer;
-    transition: background-color 0.3s ease;
+    transition: background-color 0.3s ease, transform 0.2s ease;
 }
 
 .appointment-card .actions .btn-approve {
-    background-color: #28a745;
+    background-color: #FF9E44;
     color: #fff;
 }
 
 .appointment-card .actions .btn-approve:hover {
-    background-color: #218838;
+    background-color: #FF7A00;
+    transform: scale(1.05);
 }
 
 .appointment-card .actions .btn-reject {
-    background-color: #dc3545;
-    color: #fff;
+    background-color: #fff;
+    color: #333;
+    border: 1px solid #ddd;
 }
 
 .appointment-card .actions .btn-reject:hover {
-    background-color: #c82333;
+    background-color: #f8f9fa;
+    color: #333;
+    transform: scale(1.05);
 }
 
 /* Modal Styles */
@@ -191,4 +225,42 @@ body {
     font-size: 0.9rem;
     padding: 0.5rem 1rem;
     border-radius: 4px;
+}
+
+/* Responsive Design */
+@media (max-width: 992px) {
+    .dashboard-content {
+        grid-template-columns: 1fr;
+    }
+
+    .filters {
+        order: 2;
+    }
+
+    .appointments {
+        order: 1;
+    }
+}
+
+@media (max-width: 576px) {
+    .filters {
+        padding: 1.5rem;
+    }
+
+    .appointment-card {
+        padding: 1.2rem;
+    }
+
+    .appointment-card .details h5 {
+        font-size: 1rem;
+    }
+
+    .appointment-card .details p {
+        font-size: 0.85rem;
+    }
+
+    .appointment-card .actions button {
+        font-size: 0.8rem;
+        padding: 0.5rem 1rem;
+    }
 }

@@ -23,15 +23,6 @@
         </button>
         <div class="collapse navbar-collapse" id="navbarNav">
             <ul class="navbar-nav ms-auto">
-                <li class="nav-item">
-                    <a class="nav-link" href="index.html">Home</a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="appointments.html">Appointments</a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link active" href="#">Nurse Dashboard</a>
-                </li>
             </ul>
         </div>
     </div>
@@ -69,8 +60,42 @@
 
             <div class="appointments">
                 <h4>Appointments</h4>
-                <div class="appointment-list">
-                    <!-- Appointment cards will be dynamically generated here -->
+                <ul class="nav nav-tabs" id="appointmentTabs" role="tablist">
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link active" id="new-tab" data-bs-toggle="tab" data-bs-target="#new" type="button" role="tab" aria-controls="new" aria-selected="true">New Appointments</button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="upcoming-tab" data-bs-toggle="tab" data-bs-target="#upcoming" type="button" role="tab" aria-controls="upcoming" aria-selected="false">Upcoming Appointments</button>
+                    </li>
+                    <li class="nav-item" role="presentation"></li>
+                        <button class="nav-link" id="conflicts-tab" data-bs-toggle="tab" data-bs-target="#conflicts" type="button" role="tab" aria-controls="conflicts" aria-selected="false">Conflicts</button>
+                    </li>
+                </ul>
+                <div class="tab-content" id="appointmentTabsContent">
+                    <div class="tab-pane fade show active" id="new" role="tabpanel" aria-labelledby="new-tab">
+                        <div class="appointment-list" id="newAppointments">
+                            <!-- New appointments will be dynamically generated here -->
+                        </div>
+                        <div class="pagination" id="newPagination">
+                            <!-- Pagination controls for new appointments -->
+                        </div>
+                    </div>
+                    <div class="tab-pane fade" id="upcoming" role="tabpanel" aria-labelledby="upcoming-tab">
+                        <div class="appointment-list" id="upcomingAppointments">
+                            <!-- Upcoming appointments will be dynamically generated here -->
+                        </div>
+                        <div class="pagination" id="upcomingPagination">
+                            <!-- Pagination controls for upcoming appointments -->
+                        </div>
+                    </div>
+                    <div class="tab-pane fade" id="conflicts" role="tabpanel" aria-labelledby="conflicts-tab">
+                        <div class="appointment-list" id="conflictAppointments">
+                            <!-- Conflicting appointments will be dynamically generated here -->
+                        </div>
+                        <div class="pagination" id="conflictPagination">
+                            <!-- Pagination controls for conflicting appointments -->
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
