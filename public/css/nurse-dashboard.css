@@ -1,0 +1,194 @@
+/* Nurse Dashboard Styles */
+
+body {
+    font-family: 'Poppins', sans-serif;
+    background-color: #FAF9F6;
+    color: #333;
+    margin: 0;
+    padding: 0;
+}
+
+.navbar {
+    background-color: #FFFAFA;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+}
+
+.navbar-brand img {
+    max-height: 35px;
+}
+
+.dashboard-section {
+    padding: 2rem 0;
+}
+
+.dashboard-header {
+    text-align: center;
+    margin-bottom: 2rem;
+}
+
+.dashboard-header h1 {
+    font-size: 2.5rem;
+    font-weight: 600;
+    color: #2b2a29;
+}
+
+.dashboard-header p {
+    font-size: 1.1rem;
+    color: #555;
+}
+
+.dashboard-content {
+    display: flex;
+    gap: 2rem;
+}
+
+.filters {
+    flex: 1;
+    background: #FFFFFF;
+    padding: 1.5rem;
+    border-radius: 8px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+}
+
+.filters h4 {
+    font-size: 1.2rem;
+    font-weight: 600;
+    margin-bottom: 1rem;
+}
+
+.filter-group {
+    margin-bottom: 1rem;
+}
+
+.filter-group label {
+    font-size: 0.9rem;
+    color: #555;
+    margin-bottom: 0.5rem;
+    display: block;
+}
+
+.filter-group input,
+.filter-group select {
+    width: 100%;
+    padding: 0.5rem;
+    font-size: 0.9rem;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+}
+
+.btn-primary {
+    background-color: #FF9E44;
+    border: none;
+    font-size: 1rem;
+    font-weight: 600;
+    padding: 0.8rem;
+    border-radius: 4px;
+    transition: background-color 0.3s ease;
+}
+
+.btn-primary:hover {
+    background-color: #FF7A00;
+}
+
+.appointments {
+    flex: 2;
+    background: #FFFFFF;
+    padding: 1.5rem;
+    border-radius: 8px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+}
+
+.appointments h4 {
+    font-size: 1.2rem;
+    font-weight: 600;
+    margin-bottom: 1rem;
+}
+
+.appointment-list {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.appointment-card {
+    background: #FAFAFA;
+    padding: 1rem;
+    border-radius: 8px;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    transition: box-shadow 0.3s ease;
+}
+
+.appointment-card:hover {
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+}
+
+.appointment-card .details {
+    flex: 1;
+}
+
+.appointment-card .details h5 {
+    font-size: 1rem;
+    font-weight: 600;
+    margin: 0;
+    color: #333;
+}
+
+.appointment-card .details p {
+    font-size: 0.9rem;
+    color: #555;
+    margin: 0.2rem 0;
+}
+
+.appointment-card .actions {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.appointment-card .actions button {
+    font-size: 0.9rem;
+    padding: 0.5rem 1rem;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+
+.appointment-card .actions .btn-approve {
+    background-color: #28a745;
+    color: #fff;
+}
+
+.appointment-card .actions .btn-approve:hover {
+    background-color: #218838;
+}
+
+.appointment-card .actions .btn-reject {
+    background-color: #dc3545;
+    color: #fff;
+}
+
+.appointment-card .actions .btn-reject:hover {
+    background-color: #c82333;
+}
+
+/* Modal Styles */
+.modal-content {
+    border-radius: 8px;
+}
+
+.modal-header {
+    border-bottom: none;
+}
+
+.modal-footer {
+    border-top: none;
+}
+
+.modal-footer .btn {
+    font-size: 0.9rem;
+    padding: 0.5rem 1rem;
+    border-radius: 4px;
+}
