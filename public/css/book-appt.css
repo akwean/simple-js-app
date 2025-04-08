@@ -293,10 +293,10 @@
 }
 
 .calendar-day.selected {
-    background: var(--primary-color);
-    color: white;
-    transform: scale(1.05);
-    box-shadow: 0 4px 10px rgba(255, 158, 68, 0.3);
+    background-color: #ffebcd;
+    color: #ff8c00;
+    border: 2px solid #ff8c00;
+    font-weight: bold;
 }
 
 .calendar-day.disabled {
@@ -305,8 +305,45 @@
 }
 
 .calendar-day.today {
-    border: 2px solid var(--primary-color);
-    font-weight: 600;
+    background-color: #e8f5e9;
+    color: #2e7d32;
+    border: 2px solid #2e7d32;
+    position: relative;
+}
+
+.calendar-day.today.unavailable-today {
+    cursor: not-allowed;
+    opacity: 0.8;
+}
+
+.calendar-day .today-tooltip {
+    visibility: hidden;
+    width: 160px;
+    background-color: rgba(0, 0, 0, 0.8);
+    color: #fff;
+    text-align: center;
+    border-radius: 4px;
+    padding: 5px;
+    position: absolute;
+    z-index: 10;
+    bottom: 125%;
+    left: 50%;
+    margin-left: -80px;
+    opacity: 0;
+    transition: opacity 0.3s;
+    font-size: 12px;
+    pointer-events: none;
+}
+
+.calendar-day.today.unavailable-today:hover .today-tooltip {
+    visibility: visible;
+    opacity: 1;
+}
+
+.calendar-day.today.selected {
+    background: linear-gradient(135deg, #e8f5e9 50%, #ffebcd 50%);
+    border: 2px solid;
+    border-image: linear-gradient(135deg, #2e7d32 50%, #ff8c00 50%) 1;
 }
 
 .calendar-day.outside-month {

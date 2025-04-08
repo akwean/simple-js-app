@@ -150,6 +150,16 @@ document.addEventListener('DOMContentLoaded', function() {
                 
                 if (day.isToday) {
                     dayElement.classList.add('today');
+                    // Also mark today as unavailable for appointments
+                    if (!day.isPast) { // This check is redundant but kept for clarity
+                        dayElement.classList.add('unavailable-today');
+                        
+                        // Add tooltip element to show unavailable message
+                        const tooltipElement = document.createElement('span');
+                        tooltipElement.className = 'today-tooltip';
+                        tooltipElement.textContent = 'Same-day appointments not available';
+                        dayElement.appendChild(tooltipElement);
+                    }
                 }
                 
                 // Check if this day is the selected date
@@ -164,7 +174,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
                 
                 // Add click event for date selection
-                if (!day.isPast) {
+                if (!day.isPast && !day.isToday) { // Don't allow today to be selected
                     dayElement.addEventListener('click', () => {
                         // Remove selected class from all days
                         document.querySelectorAll('.calendar-day').forEach(el => {
