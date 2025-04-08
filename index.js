@@ -11,6 +11,11 @@ app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
+// Route for the staff
+app.get('/nurse-dashboard', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'nurse-dashboard.html'));
+});
+
 // The original text response route (now at /api)
 app.get('/api', (req, res) => {
   res.send('First git commit');
