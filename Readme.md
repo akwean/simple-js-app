@@ -62,6 +62,48 @@ A basic Express.js application that serves a "Hello World" style response.
    - The server will start on port 3000
    - Access the application at [http://localhost:3000](http://localhost:3000)
 
+## Database Setup
+
+### Installing MySQL
+
+1. **Install MySQL Server**
+   ```bash
+   sudo apt install mysql-server
+   sudo service mysql start
+   sudo mysql_secure_installation
+   ```
+
+2. **Configure MySQL User**
+   ```bash
+   sudo mysql
+   ```
+   
+   In the MySQL prompt:
+   ```sql
+   ALTER USER 'root'@'localhost' IDENTIFIED WITH mysql_native_password BY 'your_password';
+   FLUSH PRIVILEGES;
+   EXIT;
+   ```
+
+3. **Create Database and User**
+   ```bash
+   mysql -u root -p
+   ```
+   
+   In the MySQL prompt:
+   ```sql
+   CREATE DATABASE clinic_db;
+   CREATE USER 'clinic_user'@'localhost' IDENTIFIED BY 'password';
+   GRANT ALL PRIVILEGES ON clinic_db.* TO 'clinic_user'@'localhost';
+   FLUSH PRIVILEGES;
+   EXIT;
+   ```
+
+4. **Install MySQL Node.js Driver**
+   ```bash
+   npm install mysql2
+   ```
+
 ## Development
 
 You can add a start script to package.json for easier running:

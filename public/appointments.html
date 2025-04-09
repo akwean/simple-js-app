@@ -278,6 +278,40 @@
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 <script src="js/book-appt.js"></script>
+<script>
+document.getElementById('confirmBtn').addEventListener('click', async () => {
+    const appointmentData = {
+        date: document.getElementById('confirmDate').textContent,
+        time: document.getElementById('confirmTime').textContent,
+        service: document.getElementById('confirmService').textContent,
+        notes: document.getElementById('confirmNotes').textContent || null,
+        userId: 1 // Replace with actual user ID from session or authentication
+    };
+
+    try {
+        const response = await fetch('/api/appointments', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(appointmentData)
+        });
+
+        if (response.ok) {
+            const result = await response.json();
+            document.getElementById('confirmationCode').textContent = result.confirmationCode;
+            document.getElementById('successDate').textContent = appointmentData.date;
+            document.getElementById('successTime').textContent = appointmentData.time;
+            document.getElementById('successService').textContent = appointmentData.service;
+            document.getElementById('step4').style.display = 'none';
+            document.getElementById('successMessage').style.display = 'block';
+        } else {
+            alert('Failed to book appointment. Please try again.');
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        alert('An error occurred. Please try again.');
+    }
+});
+</script>
 
 </body>
 </html>
