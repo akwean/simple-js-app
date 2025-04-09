@@ -229,66 +229,89 @@ document.addEventListener('DOMContentLoaded', function() {
     const timeSlots = {
         morningSlots: ['8:00 AM', '9:00 AM', '10:00 AM', '11:00 AM'],
         afternoonSlots: ['1:00 PM', '2:00 PM', '3:00 PM', '4:00 PM'],
-        disabledSlots: ['9:00 AM', '2:00 PM'], // Example of unavailable time slots
+        disabledSlots: [], // Dynamically fetched disabled slots
         selectedSlot: null,
-        
-        initialize: function() {
+
+        initialize: async function() {
+            await this.fetchDisabledSlots();
             this.renderTimeSlots();
         },
-        
+
+        fetchDisabledSlots: async function() {
+            try {
+                const response = await fetch('/api/time-slots'); // Replace with your API endpoint
+                const timeSlots = await response.json();
+
+                // Filter unavailable slots
+                this.disabledSlots = timeSlots
+                    .filter(slot => !slot.is_available)
+                    .map(slot => {
+                        const time = new Date(`1970-01-01T${slot.appointment_time}Z`).toLocaleTimeString('en-US', {
+                            hour: '2-digit',
+                            minute: '2-digit',
+                            hour12: true
+                        });
+                        return time;
+                    });
+            } catch (error) {
+                console.error('Error fetching time slots:', error);
+            }
+        },
+
         renderTimeSlots: function() {
             // Render morning slots
             const morningContainer = document.getElementById('morningSlots');
             morningContainer.innerHTML = '';
-            
+
             this.morningSlots.forEach(slot => {
                 const isDisabled = this.disabledSlots.includes(slot);
                 const timeSlotElement = this.createTimeSlotElement(slot, isDisabled);
                 morningContainer.appendChild(timeSlotElement);
             });
-            
+
             // Render afternoon slots
             const afternoonContainer = document.getElementById('afternoonSlots');
             afternoonContainer.innerHTML = '';
-            
+
             this.afternoonSlots.forEach(slot => {
                 const isDisabled = this.disabledSlots.includes(slot);
                 const timeSlotElement = this.createTimeSlotElement(slot, isDisabled);
                 afternoonContainer.appendChild(timeSlotElement);
             });
         },
-        
+
         createTimeSlotElement: function(time, isDisabled) {
             const slotElement = document.createElement('div');
             slotElement.className = 'time-slot';
             slotElement.textContent = time;
-            
+
             if (isDisabled) {
                 slotElement.classList.add('disabled');
+                slotElement.style.textDecoration = 'line-through'; // Add strikethrough for disabled slots
             } else {
                 slotElement.addEventListener('click', () => {
                     // Remove selected class from all slots
                     document.querySelectorAll('.time-slot').forEach(el => {
                         el.classList.remove('selected');
                     });
-                    
+
                     // Add selected class to clicked slot
                     slotElement.classList.add('selected');
-                    
+
                     // Set selected time
                     this.selectedSlot = time;
-                    
+
                     // Update booking state
                     bookingState.selectedTime = time;
-                    
+
                     // Update selected time text
                     document.getElementById('selectedTimeText').textContent = time;
-                    
+
                     // Enable next button
                     document.getElementById('timeNextBtn').disabled = false;
                 });
             }
-            
+
             return slotElement;
         }
     };
@@ -387,6 +410,12 @@ document.addEventListener('DOMContentLoaded', function() {
         },
         
         completeBooking: function() {
+            // Example of fixing the query
+            const query = `
+                INSERT INTO Appointments (user_id, service_id, appointment_date, appointment_time, status)
+                VALUES (1, (SELECT service_id FROM Services WHERE service_name = 'Physical Examination'), '2025-04-09', '08:00:00', 'pending')
+            `;
+
             // In a real application, this would send data to a server
             // For now, we'll simulate success
             

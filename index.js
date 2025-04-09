@@ -24,8 +24,7 @@ app.post('/api/appointments', (req, res) => {
   
   // Parse the formatted date string into a Date object
   const dateObj = new Date(date);
-  // Format as YYYY-MM-DD for MySQL
-  const formattedDate = dateObj.toISOString().split('T')[0];
+  const formattedDate = dateObj.toISOString().split('T')[0]; // Format as YYYY-MM-DD for MySQL
   
   // Convert 12-hour time format to 24-hour
   let formattedTime = time;
@@ -33,17 +32,15 @@ app.post('/api/appointments', (req, res) => {
     const [hour, minutesPeriod] = time.split(':');
     const minutes = minutesPeriod.slice(0, 2);
     const period = minutesPeriod.slice(2).trim();
-    
     let hourNum = parseInt(hour);
     if (period === 'PM' && hourNum < 12) hourNum += 12;
     if (period === 'AM' && hourNum === 12) hourNum = 0;
-    
     formattedTime = `${hourNum.toString().padStart(2, '0')}:${minutes}:00`;
   }
 
   const query = `
-      INSERT INTO appointments (user_id, service_id, appointment_date, appointment_time, status)
-      VALUES (?, (SELECT service_id FROM services WHERE name = ?), ?, ?, 'pending')
+      INSERT INTO Appointments (user_id, service_id, appointment_date, appointment_time, status)
+      VALUES (?, (SELECT service_id FROM Services WHERE service_name = ?), ?, ?, 'pending')
   `;
 
   db.query(query, [userId, service, formattedDate, formattedTime], (err, result) => {
@@ -56,7 +53,7 @@ app.post('/api/appointments', (req, res) => {
     
     // Create confirmation record
     const confirmQuery = `
-      INSERT INTO appointment_confirmations (appointment_id, confirmation_code)
+      INSERT INTO AppointmentConfirmations (appointment_id, confirmation_code)
       VALUES (?, ?)
     `;
     
@@ -71,8 +68,26 @@ app.post('/api/appointments', (req, res) => {
   });
 });
 
-// Fixed typos in column names and removed invalid semicolon in SQL query
-app.get('/api/appointments', (req, res) =>  {
+// Route to fetch time slots
+app.get('/api/time-slots', (req, res) => {
+  const query = `
+    SELECT 
+      appointment_date, 
+      appointment_time, 
+      is_available 
+    FROM TimeSlots
+  `;
+
+  db.query(query, (err, results) => {
+    if (err) {
+      console.error('Error fetching time slots:', err);
+      return res.status(500).json({ error: 'Database error' });
+    }
+    res.json(results);
+  });
+});
+
+app.get('/api/appointments', (req, res) => {
   const query = `
   SELECT 
   a.appointment_id AS id,
@@ -80,17 +95,16 @@ app.get('/api/appointments', (req, res) =>  {
   a.appointment_date AS date,
   a.appointment_time AS time,
   a.status
-  FROM appointments a 
-  JOIN users u ON a.user_id = u.user_id
+  FROM Appointments a 
+  JOIN Users u ON a.user_id = u.user_id
   ORDER BY a.appointment_date, a.appointment_time
   `;
 
   db.query(query, (err, results) => {
     if (err) {
       console.error(err);
-      return res.status(500).json({ error: 'Database error'});
+      return res.status(500).json({ error: 'Database error' });
     }
-    //console.log('Query Results:', results); // Log the query results for debugging
     res.json(results);
   });
 });
