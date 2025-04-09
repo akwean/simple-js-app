@@ -175,7 +175,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 
                 // Add click event for date selection
                 if (!day.isPast && !day.isToday) { // Don't allow today to be selected
-                    dayElement.addEventListener('click', () => {
+                    dayElement.addEventListener('click', async () => {
                         // Remove selected class from all days
                         document.querySelectorAll('.calendar-day').forEach(el => {
                             el.classList.remove('selected');
@@ -201,6 +201,10 @@ document.addEventListener('DOMContentLoaded', function() {
                         
                         // Enable next button
                         document.getElementById('dateNextBtn').disabled = false;
+                        
+                        // Fetch time slots for the selected date
+                        await timeSlots.fetchDisabledSlots();
+                        timeSlots.renderTimeSlots();
                     });
                 }
                 
@@ -233,26 +237,43 @@ document.addEventListener('DOMContentLoaded', function() {
         selectedSlot: null,
 
         initialize: async function() {
-            await this.fetchDisabledSlots();
+            // Only fetch disabled slots if a date is selected
+            if (bookingState.selectedDate) {
+                await this.fetchDisabledSlots();
+            }
             this.renderTimeSlots();
         },
 
         fetchDisabledSlots: async function() {
             try {
-                const response = await fetch('/api/time-slots'); // Replace with your API endpoint
-                const timeSlots = await response.json();
+                // Safety check to ensure selectedDate exists
+                if (!bookingState.selectedDate) {
+                    console.log('No date selected yet, skipping time slot check');
+                    return;
+                }
+                
+                // Format date as YYYY-MM-DD with proper timezone handling
+                const year = bookingState.selectedDate.getFullYear();
+                const month = (bookingState.selectedDate.getMonth() + 1).toString().padStart(2, '0');
+                const day = bookingState.selectedDate.getDate().toString().padStart(2, '0');
+                const formattedDate = `${year}-${month}-${day}`;
+                
+                console.log('Fetching time slots for date:', formattedDate);
+                
+                const response = await fetch(`/api/time-slots?date=${formattedDate}`);
+                const data = await response.json();
+                console.log('Time slots response:', data);
 
-                // Filter unavailable slots
-                this.disabledSlots = timeSlots
-                    .filter(slot => !slot.is_available)
-                    .map(slot => {
-                        const time = new Date(`1970-01-01T${slot.appointment_time}Z`).toLocaleTimeString('en-US', {
-                            hour: '2-digit',
-                            minute: '2-digit',
-                            hour12: true
-                        });
-                        return time;
-                    });
+                // Use available slots instead of disabled slots
+                const availableSlots = data.availableSlots || [];
+
+                // Mark unavailable slots
+                this.disabledSlots = [
+                    ...this.morningSlots,
+                    ...this.afternoonSlots
+                ].filter(slot => !availableSlots.includes(slot));
+                
+                console.log('Disabled slots:', this.disabledSlots);
             } catch (error) {
                 console.error('Error fetching time slots:', error);
             }
@@ -404,62 +425,108 @@ document.addEventListener('DOMContentLoaded', function() {
         
         setupEventListeners: function() {
             // Confirm appointment button
-            document.getElementById('confirmBtn').addEventListener('click', () => {
-                this.completeBooking();
-            });
-        },
-        
-        completeBooking: function() {
-            // Example of fixing the query
-            const query = `
-                INSERT INTO Appointments (user_id, service_id, appointment_date, appointment_time, status)
-                VALUES (1, (SELECT service_id FROM Services WHERE service_name = 'Physical Examination'), '2025-04-09', '08:00:00', 'pending')
-            `;
-
-            // In a real application, this would send data to a server
-            // For now, we'll simulate success
+            const confirmBtn = document.getElementById('confirmBtn');
             
-            // Generate a random confirmation code
-            const confirmationCode = 'BUPC-' + new Date().getFullYear() + '-' + Math.floor(1000 + Math.random() * 9000);
-            document.getElementById('confirmationCode').textContent = confirmationCode;
+            // Track if we're currently submitting to prevent double submission
+            let isSubmitting = false;
             
-            // Copy confirmation details to success screen
-            if (bookingState.selectedDate) {
-                const dateText = bookingState.selectedDate.toLocaleDateString('en-US', { 
-                    weekday: 'long', 
-                    month: 'long', 
-                    day: 'numeric', 
-                    year: 'numeric' 
-                });
-                document.getElementById('successDate').textContent = dateText;
-            }
-            
-            if (bookingState.selectedTime) {
-                document.getElementById('successTime').textContent = bookingState.selectedTime;
-            }
-            
-            if (bookingState.selectedService) {
-                document.getElementById('successService').textContent = bookingState.selectedService;
-            }
-            
-            // Hide all steps
-            document.querySelectorAll('.booking-step').forEach(el => {
-                el.style.display = 'none';
-            });
-            
-            // Show success message
-            document.getElementById('successMessage').style.display = 'block';
-            
-            // Add animation class
-            document.getElementById('successMessage').classList.add('animated');
-            
-            // Update progress indicator to 100%
-            document.getElementById('progressIndicator').style.width = '100%';
-            
-            // Set all steps as completed
-            document.querySelectorAll('.step').forEach(el => {
-                el.classList.remove('active');
-                el.classList.add('completed');
+            confirmBtn.addEventListener('click', async function() {
+                // Prevent double submission
+                if (isSubmitting) {
+                    console.log('Submission already in progress, preventing duplicate');
+                    return;
+                }
+                
+                try {
+                    // Set submitting state and disable button
+                    isSubmitting = true;
+                    confirmBtn.disabled = true;
+                    confirmBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Booking...';
+                    
+                    // Get the selected date as a properly formatted string
+                    const selectedDate = bookingState.selectedDate;
+                    if (!selectedDate) {
+                        isSubmitting = false;
+                        confirmBtn.disabled = false;
+                        confirmBtn.textContent = 'Confirm Appointment';
+                        return;
+                    }
+                    
+                    // Use the date object directly from bookingState to build the data
+                    const appointmentData = {
+                        date: document.getElementById('confirmDate').textContent,
+                        time: document.getElementById('confirmTime').textContent,
+                        service: document.getElementById('confirmService').textContent,
+                        notes: document.getElementById('confirmNotes').textContent || null,
+                        userId: 1 // Replace with actual user ID 
+                    };
+                    
+                    console.log('Submitting appointment:', appointmentData);
+                    
+                    const response = await fetch('/api/appointments', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(appointmentData)
+                    });
+                    
+                    const result = await response.json();
+                    
+                    if (!response.ok) {
+                        if (response.status === 409) {
+                            // Special handling for conflict
+                            throw new Error(result.message || 'This time slot is already taken.');
+                        } else {
+                            throw new Error(result.message || result.error || 'Failed to book appointment');
+                        }
+                    }
+                    
+                    // Success path - appointment was booked
+                    document.getElementById('confirmationCode').textContent = result.confirmationCode;
+                    
+                    // Display the appointment details
+                    document.getElementById('successDate').textContent = appointmentData.date;
+                    document.getElementById('successTime').textContent = appointmentData.time;
+                    document.getElementById('successService').textContent = appointmentData.service;
+                    
+                    // Hide all booking steps and show success message
+                    document.querySelectorAll('.booking-step').forEach(el => {
+                        el.style.display = 'none';
+                    });
+                    document.getElementById('successMessage').style.display = 'block';
+                    document.getElementById('successMessage').classList.add('animated');
+                    document.getElementById('progressIndicator').style.width = '100%';
+                    
+                    // Set all steps as completed
+                    document.querySelectorAll('.step').forEach(el => {
+                        el.classList.remove('active');
+                        el.classList.add('completed');
+                    });
+                } catch (error) {
+                    console.error('Error booking appointment:', error);
+                    
+                    // Show a more user-friendly error message
+                    const errorMessage = document.createElement('div');
+                    errorMessage.className = 'alert alert-danger';
+                    errorMessage.innerHTML = `
+                        <strong>Booking failed:</strong> ${error.message || 'Unknown error'}
+                    `;
+                    
+                    // Insert the error message at the top of the confirmation step
+                    const confirmStep = document.getElementById('step4');
+                    
+                    // Remove any existing error messages
+                    const existingError = confirmStep.querySelector('.alert');
+                    if (existingError) {
+                        confirmStep.removeChild(existingError);
+                    }
+                    
+                    confirmStep.insertBefore(errorMessage, confirmStep.firstChild);
+                } finally {
+                    // Always reset submitting state and button
+                    isSubmitting = false;
+                    confirmBtn.disabled = false;
+                    confirmBtn.textContent = 'Confirm Appointment';
+                }
             });
         }
     };
@@ -481,7 +548,12 @@ document.addEventListener('DOMContentLoaded', function() {
     
     function setupNavigationButtons() {
         // Step 1 to Step 2 (Date to Time)
-        document.getElementById('dateNextBtn').addEventListener('click', () => {
+        document.getElementById('dateNextBtn').addEventListener('click', async () => {
+            // Ensure time slots are fetched for the selected date before moving to the time selection step
+            if (bookingState.selectedDate) {
+                await timeSlots.fetchDisabledSlots();
+                timeSlots.renderTimeSlots();
+            }
             bookingState.updateStep(2);
         });
         

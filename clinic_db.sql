@@ -39,18 +39,10 @@ CREATE TABLE Appointments (
     additional_notes TEXT,
     status ENUM('pending', 'confirmed', 'cancelled') DEFAULT 'pending',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    -- Remove the UNIQUE constraint as we handle uniqueness checks in the app logic
+    -- UNIQUE (appointment_date, appointment_time),
     FOREIGN KEY (user_id) REFERENCES Users(user_id) ON DELETE CASCADE,
     FOREIGN KEY (service_id) REFERENCES Services(service_id) ON DELETE CASCADE
-);
-
--- Updated TimeSlots table to use is_available instead of status
-CREATE TABLE TimeSlots (
-    slot_id INT AUTO_INCREMENT PRIMARY KEY,
-    appointment_date DATE NOT NULL,
-    appointment_time TIME NOT NULL, -- Replacing start_time and end_time with a single column
-    is_available BOOLEAN DEFAULT TRUE, -- Indicates if the slot is available
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    UNIQUE (appointment_date, appointment_time) -- Ensure no duplicate slots for the same date and time
 );
 
 -- Stores confirmation details for appointments.
