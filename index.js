@@ -19,11 +19,6 @@ app.get('/nurse-dashboard', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'nurse-dashboard.html'));
 });
 
-// The original text response route (now at /api)
-app.get('/api', (req, res) => {
-  res.send('First git commit');
-});
-
 app.post('/api/appointments', (req, res) => {
   const { date, time, service, notes, userId } = req.body;
   
@@ -73,6 +68,30 @@ app.post('/api/appointments', (req, res) => {
       
       res.json({ confirmationCode });
     });
+  });
+});
+
+// Fixed typos in column names and removed invalid semicolon in SQL query
+app.get('/api/appointments', (req, res) =>  {
+  const query = `
+  SELECT 
+  a.appointment_id AS id,
+  CONCAT(u.first_name, ' ' ,u.last_name) AS patient,
+  a.appointment_date AS date,
+  a.appointment_time AS time,
+  a.status
+  FROM appointments a 
+  JOIN users u ON a.user_id = u.user_id
+  ORDER BY a.appointment_date, a.appointment_time
+  `;
+
+  db.query(query, (err, results) => {
+    if (err) {
+      console.error(err);
+      return res.status(500).json({ error: 'Database error'});
+    }
+    //console.log('Query Results:', results); // Log the query results for debugging
+    res.json(results);
   });
 });
 

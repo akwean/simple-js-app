@@ -1,22 +1,25 @@
 document.addEventListener('DOMContentLoaded', function() {
-    // Sample data for appointments
-    const appointments = [
-        { id: 1, patient: 'John Doe', date: '2025-04-10', time: '10:00 AM', status: 'pending' },
-        { id: 2, patient: 'Jane Smith', date: '2025-04-11', time: '2:00 PM', status: 'approved' },
-        { id: 3, patient: 'Alice Johnson', date: '2025-04-10', time: '10:00 AM', status: 'pending' }, // Conflict example
-        { id: 4, patient: 'Bob Brown', date: '2025-04-13', time: '3:00 PM', status: 'canceled' },
-        { id: 5, patient: 'Charlie Davis', date: '2025-04-12', time: '11:00 AM', status: 'pending' },
-        { id: 6, patient: 'Emily White', date: '2025-04-10', time: '10:00 AM', status: 'pending' }, // Conflict example
-    ];
 
-    const appointmentsPerPage = 5;
+    const appointmentsPerPage = 4;
     const newAppointmentsContainer = document.getElementById('newAppointments');
     const upcomingAppointmentsContainer = document.getElementById('upcomingAppointments');
     const conflictAppointmentsContainer = document.getElementById('conflictAppointments');
 
-    // Categorize appointments
-    function categorizeAppointments() {
-        const today = new Date('2025-04-08'); // Current date
+    async function fetchAppointments() {
+        try {
+            const response = await fetch('/api/appointments');
+            if (!response.ok) throw new Error('Failed to Fetch appointments');
+            return await response.json();
+        } catch (error) {
+            console.error('Error fetching appointments:', error);
+            return [];
+        }
+    }
+
+    // Updated categorizeAppointments to handle date formatting and time zone conversion
+    function categorizeAppointments(appointments) {
+        const today = new Date(); // Current date
+        today.setHours(0, 0, 0, 0); // Normalize to start of the day
         const newAppointments = [];
         const upcomingAppointments = [];
         const conflicts = [];
@@ -24,7 +27,11 @@ document.addEventListener('DOMContentLoaded', function() {
         const appointmentMap = new Map();
 
         appointments.forEach(appt => {
+            // Convert date and time to local Date object
             const apptDate = new Date(appt.date);
+            const apptTime = appt.time.split(':');
+            apptDate.setHours(apptTime[0], apptTime[1], apptTime[2]);
+
             const key = `${appt.date}-${appt.time}`;
 
             // Check for conflicts
@@ -35,6 +42,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 appointmentMap.set(key, appt);
             }
 
+            // Compare normalized dates
             if (apptDate >= today && appt.status === 'pending') {
                 newAppointments.push(appt);
             } else if (apptDate > today) {
@@ -45,7 +53,7 @@ document.addEventListener('DOMContentLoaded', function() {
         return { newAppointments, upcomingAppointments, conflicts: [...new Set(conflicts)] };
     }
 
-    // Render appointments with pagination
+    // Updated renderAppointments to format the date field correctly
     function renderAppointments(container, appointments, page = 1) {
         container.innerHTML = '';
         const start = (page - 1) * appointmentsPerPage;
@@ -58,12 +66,20 @@ document.addEventListener('DOMContentLoaded', function() {
         }
 
         paginatedAppointments.forEach(appointment => {
+            // Format the date to a readable format
+            const formattedDate = new Date(appointment.date).toLocaleDateString('en-US', {
+                weekday: 'long',
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric'
+            });
+
             const card = document.createElement('div');
             card.className = 'appointment-card';
             card.innerHTML = `
                 <div class="details">
                     <h5>${appointment.patient}</h5>
-                    <p>${appointment.date} at ${appointment.time}</p>
+                    <p>${formattedDate} at ${appointment.time}</p>
                     <p>Status: <span class="badge bg-${getStatusBadge(appointment.status)}">${appointment.status}</span></p>
                 </div>
                 <div class="actions">
@@ -108,9 +124,10 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-    // Initialize dashboard
-    function initDashboard() {
-        const { newAppointments, upcomingAppointments, conflicts } = categorizeAppointments();
+    // Pass the fetched appointments to categorizeAppointments in initDashboard
+    async function initDashboard() {
+        const appointments = await fetchAppointments();
+        const { newAppointments, upcomingAppointments, conflicts } = categorizeAppointments(appointments);
 
         renderAppointments(newAppointmentsContainer, newAppointments);
         renderAppointments(upcomingAppointmentsContainer, upcomingAppointments);

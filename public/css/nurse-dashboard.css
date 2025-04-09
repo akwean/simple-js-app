@@ -151,24 +151,38 @@ body {
 }
 
 .appointment-card .details .badge {
-    font-size: 0.85rem;
-    padding: 0.4rem 0.7rem;
-    border-radius: 8px;
+    font-size: 1rem; /* Increase font size */
+    font-weight: bold; /* Make text bold */
+    text-transform: uppercase; /* Make text uppercase */
+    padding: 0.5rem 1rem; /* Add padding */
+    border: 2px solid; /* Add border */
+    border-radius: 8px; /* Rounded corners */
+    display: inline-block; /* Inline-block for better alignment */
+    margin-top: 0.5rem; /* Add spacing */
 }
 
 .badge-warning {
-    background-color: #FF9E44;
-    color: #fff;
+    color: #FF9E44; /* Text color */
+    border-color: #FF9E44; /* Border color */
+    background-color: transparent; /* Remove background */
 }
 
 .badge-success {
-    background-color: #28a745;
-    color: #fff;
+    color: #28a745;
+    border-color: #28a745;
+    background-color: transparent;
 }
 
 .badge-danger {
-    background-color: #dc3545;
-    color: #fff;
+    color: #dc3545;
+    border-color: #dc3545;
+    background-color: transparent;
+}
+
+.badge-secondary {
+    color: #6c757d;
+    border-color: #6c757d;
+    background-color: transparent;
 }
 
 .appointment-card .actions {
