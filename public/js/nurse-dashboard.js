@@ -15,16 +15,35 @@ document.addEventListener('DOMContentLoaded', function() {
         toggleAllAppointmentsButton.textContent = isHidden ? 'Collapse' : 'Expand';
     });
 
-    // Add search functionality for all appointments
-    document.getElementById('searchAppointments').addEventListener('input', (e) => {
-        const searchTerm = e.target.value.toLowerCase();
-        const rows = allAppointmentsTable.querySelectorAll('tr');
+    // Add search and filter functionality for all appointments
+    document.getElementById('searchAppointments').addEventListener('input', filterAppointments);
+    document.getElementById('filterDate').addEventListener('change', filterAppointments);
+    document.getElementById('filterStatus').addEventListener('change', filterAppointments);
+
+    function filterAppointments() {
+        const searchTerm = document.getElementById('searchAppointments').value.toLowerCase();
+        const filterDate = document.getElementById('filterDate').value; // Date in YYYY-MM-DD format
+        const filterStatus = document.getElementById('filterStatus').value.toLowerCase();
+
+        const rows = document.querySelectorAll('#allAppointmentsTable tr');
         rows.forEach(row => {
-            const cells = Array.from(row.querySelectorAll('td'));
-            const matches = cells.some(cell => cell.textContent.toLowerCase().includes(searchTerm));
-            row.style.display = matches ? '' : 'none';
+            const patient = row.querySelector('td:nth-child(1)')?.textContent.toLowerCase();
+            const date = row.querySelector('td:nth-child(2)')?.textContent; // Date in table
+            const status = row.querySelector('td:nth-child(4)')?.textContent.toLowerCase();
+
+            // Convert the table date to YYYY-MM-DD format for comparison
+            const tableDate = new Date(date);
+            const formattedDate = new Date(tableDate.getTime() - tableDate.getTimezoneOffset() * 60000)
+                .toISOString()
+                .split('T')[0];
+
+            const matchesSearch = !searchTerm || patient.includes(searchTerm);
+            const matchesDate = !filterDate || formattedDate === filterDate;
+            const matchesStatus = filterStatus === 'all' || status === filterStatus;
+
+            row.style.display = matchesSearch && matchesDate && matchesStatus ? '' : 'none';
         });
-    });
+    }
 
     async function fetchAppointments() {
         try {

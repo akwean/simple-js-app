@@ -88,9 +88,24 @@
                 <button class="btn btn-primary btn-sm" id="toggleAllAppointments">Expand/Collapse</button>
             </div>
             <div id="allAppointmentsContainer" class="card-body d-none">
-                <div class="mb-3">
-                    <input type="text" id="searchAppointments" class="form-control" placeholder="Search appointments...">
+                <!-- Filters Section -->
+                <div class="row mb-3">
+                    <div class="col-md-4">
+                        <input type="text" id="searchAppointments" class="form-control" placeholder="Search by patient name...">
+                    </div>
+                    <div class="col-md-4">
+                        <input type="date" id="filterDate" class="form-control" placeholder="Filter by date">
+                    </div>
+                    <div class="col-md-4">
+                        <select id="filterStatus" class="form-select">
+                            <option value="all">All Statuses</option>
+                            <option value="pending">Pending</option>
+                            <option value="approved">Approved</option>
+                            <option value="canceled">Canceled</option>
+                        </select>
+                    </div>
                 </div>
+                <!-- Appointments Table -->
                 <div class="table-responsive" style="max-height: 400px; overflow-y: auto;">
                     <table class="table table-striped">
                         <thead>
