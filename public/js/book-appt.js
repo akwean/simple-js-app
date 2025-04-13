@@ -458,7 +458,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         time: document.getElementById('confirmTime').textContent,
                         service: document.getElementById('confirmService').textContent,
                         notes: document.getElementById('confirmNotes').textContent || null,
-                        userId: 1 // Replace with actual user ID 
+                        userId: 4 // Replace with actual user ID 
                     };
                     
                     console.log('Submitting appointment:', appointmentData);

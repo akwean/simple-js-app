@@ -20,20 +20,32 @@ document.addEventListener('DOMContentLoaded', function() {
     document.getElementById('filterDate').addEventListener('change', filterAppointments);
     document.getElementById('filterStatus').addEventListener('change', filterAppointments);
 
+    let allAppointments = []; // Store all appointments globally
+    let filteredAppointments = []; // Store filtered appointments
+
+    async function fetchAppointments() {
+        try {
+            const response = await fetch('/api/appointments');
+            if (!response.ok) throw new Error('Failed to fetch appointments');
+            allAppointments = await response.json(); // Store all appointments globally
+            return allAppointments;
+        } catch (error) {
+            console.error('Error fetching appointments:', error);
+            return [];
+        }
+    }
+
     function filterAppointments() {
         const searchTerm = document.getElementById('searchAppointments').value.toLowerCase();
         const filterDate = document.getElementById('filterDate').value; // Date in YYYY-MM-DD format
         const filterStatus = document.getElementById('filterStatus').value.toLowerCase();
 
-        const rows = document.querySelectorAll('#allAppointmentsTable tr');
-        rows.forEach(row => {
-            const patient = row.querySelector('td:nth-child(1)')?.textContent.toLowerCase();
-            const date = row.querySelector('td:nth-child(2)')?.textContent; // Date in table
-            const status = row.querySelector('td:nth-child(4)')?.textContent.toLowerCase();
-
-            // Convert the table date to YYYY-MM-DD format for comparison
-            const tableDate = new Date(date);
-            const formattedDate = new Date(tableDate.getTime() - tableDate.getTimezoneOffset() * 60000)
+        // Filter the global dataset
+        filteredAppointments = allAppointments.filter(appointment => {
+            const patient = appointment.patient.toLowerCase();
+            const status = appointment.status.toLowerCase();
+            const appointmentDate = new Date(appointment.date);
+            const formattedDate = new Date(appointmentDate.getTime() - appointmentDate.getTimezoneOffset() * 60000)
                 .toISOString()
                 .split('T')[0];
 
@@ -41,18 +53,46 @@ document.addEventListener('DOMContentLoaded', function() {
             const matchesDate = !filterDate || formattedDate === filterDate;
             const matchesStatus = filterStatus === 'all' || status === filterStatus;
 
-            row.style.display = matchesSearch && matchesDate && matchesStatus ? '' : 'none';
+            return matchesSearch && matchesDate && matchesStatus;
         });
+
+        renderAllAppointments(1); // Re-render starting from the first page
     }
 
-    async function fetchAppointments() {
+    async function renderAllAppointments(page = 1) {
+        const start = (page - 1) * appointmentsPerPage;
+        const end = start + appointmentsPerPage;
+        const paginatedAppointments = filteredAppointments.slice(start, end);
+
+        allAppointmentsTable.innerHTML = '';
+        paginatedAppointments.forEach(appointment => {
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td>${appointment.patient}</td>
+                <td>${new Date(appointment.date).toLocaleDateString()}</td>
+                <td>${appointment.time}</td>
+                <td>${appointment.status}</td>
+            `;
+            allAppointmentsTable.appendChild(row);
+        });
+
+        const totalPages = Math.ceil(filteredAppointments.length / appointmentsPerPage);
+        renderPagination(allAppointmentsPagination, totalPages, page, renderAllAppointments);
+    }
+
+    async function updateAppointmentStatus(id, action) {
         try {
-            const response = await fetch('/api/appointments');
-            if (!response.ok) throw new Error('Failed to Fetch appointments');
-            return await response.json();
+            const response = await fetch(`/api/appointments/${id}/${action}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' }
+            });
+            if (!response.ok) {
+                throw new Error(`Failed to ${action} appointment`);
+            }
+            const result = await response.json();
+            console.log(result.message);
         } catch (error) {
-            console.error('Error fetching appointments:', error);
-            return [];
+            console.error(`Error updating appointment status:`, error);
         }
     }
 
@@ -159,22 +199,6 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    async function updateAppointmentStatus(id, action) {
-        try {
-            const response = await fetch(`/api/appointments/${id}/${action}`, {
-                method: 'PUT',
-                headers: { 'Content-Type': 'application/json' }
-            });
-            if (!response.ok) {
-                throw new Error(`Failed to ${action} appointment`);
-            }
-            const result = await response.json();
-            console.log(result.message);
-        } catch (error) {
-            console.error(`Error updating appointment status:`, error);
-        }
-    }
-
     // Render pagination controls
     function renderPagination(container, totalPages, currentPage, onPageChange) {
         container.innerHTML = '';
@@ -210,35 +234,13 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Pass the fetched appointments to categorizeAppointments in initDashboard
     async function initDashboard() {
-        const appointments = await fetchAppointments();
-        const { newAppointments, upcomingAppointments, conflicts } = categorizeAppointments(appointments);
+        await fetchAppointments();
+        filteredAppointments = allAppointments; // Initialize filteredAppointments with all data
+        const { newAppointments, upcomingAppointments, conflicts } = categorizeAppointments(allAppointments);
 
         renderAppointments(newAppointmentsContainer, newAppointments);
         renderAppointments(upcomingAppointmentsContainer, upcomingAppointments);
         renderAppointments(conflictAppointmentsContainer, conflicts);
-    }
-
-    async function renderAllAppointments(page = 1) {
-        const appointments = await fetchAppointments();
-        const start = (page - 1) * appointmentsPerPage;
-        const end = start + appointmentsPerPage;
-        const paginatedAppointments = appointments.slice(start, end);
-
-        allAppointmentsTable.innerHTML = '';
-        paginatedAppointments.forEach(appointment => {
-            const row = document.createElement('tr');
-            row.innerHTML = `
-                
-                <td>${appointment.patient}</td>
-                <td>${new Date(appointment.date).toLocaleDateString()}</td>
-                <td>${appointment.time}</td>
-                <td>${appointment.status}</td>
-            `;
-            allAppointmentsTable.appendChild(row);
-        });
-
-        const totalPages = Math.ceil(appointments.length / appointmentsPerPage);
-        renderPagination(allAppointmentsPagination, totalPages, page, renderAllAppointments);
     }
 
     initDashboard();
