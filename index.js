@@ -186,31 +186,33 @@ app.get('/api/time-slots', (req, res) => {
 });
 
 app.get('/api/appointments', (req, res) => {
-  const query = `
-    SELECT 
-      a.appointment_id AS id,
-      CONCAT(u.first_name, ' ', u.last_name) AS patient,
-      a.appointment_date AS date,
-      a.appointment_time AS time,
-      ac.confirmation_code,
-      CASE 
-        WHEN a.status = 'confirmed' THEN 'approved'
-        WHEN a.status = 'cancelled' THEN 'canceled'
-        ELSE a.status
-      END AS status
-    FROM Appointments a 
-    JOIN Users u ON a.user_id = u.user_id
-    LEFT JOIN AppointmentConfirmations ac ON a.appointment_id = ac.appointment_id
-    ORDER BY a.appointment_date DESC, a.appointment_time DESC
-  `;
-  
-  db.query(query, (err, results) => {
-    if (err) {
-      console.error(err);
-      return res.status(500).json({ error: 'Database error' });
-    }
-    res.json(results);
-  });
+    const query = `
+        SELECT 
+            a.appointment_id AS id,
+            CONCAT(u.first_name, ' ', u.last_name) AS patient,
+            a.appointment_date AS date,
+            a.appointment_time AS time,
+            ac.confirmation_code,
+            s.service_name AS service, -- Ensure service_name is included
+            CASE 
+                WHEN a.status = 'confirmed' THEN 'approved'
+                WHEN a.status = 'cancelled' THEN 'canceled'
+                ELSE a.status
+            END AS status
+        FROM Appointments a
+        JOIN Users u ON a.user_id = u.user_id
+        JOIN Services s ON a.service_id = s.service_id -- Join with Services table
+        LEFT JOIN AppointmentConfirmations ac ON a.appointment_id = ac.appointment_id
+        ORDER BY a.appointment_date DESC, a.appointment_time DESC
+    `;
+
+    db.query(query, (err, results) => {
+        if (err) {
+            console.error(err);
+            return res.status(500).json({ error: 'Database error' });
+        }
+        res.json(results);
+    });
 });
 
 // New endpoint to approve an appointment

@@ -157,12 +157,18 @@ document.addEventListener('DOMContentLoaded', function() {
                 day: 'numeric'
             });
 
+            // Safely handle the service property
+            const serviceClass = appointment.service 
+                ? `service-${appointment.service.toLowerCase().replace(/\s+/g, '-')}` 
+                : 'service-unknown';
+
             const card = document.createElement('div');
-            card.className = 'appointment-card';
+            card.className = `appointment-card ${serviceClass}`;
             card.innerHTML = `
                 <div class="details">
                     <h5>${appointment.patient}</h5>
                     <p>${formattedDate} at ${appointment.time}</p>
+                    <p>Service: <strong>${appointment.service || 'Unknown'}</strong></p>
                     <p>Confirmation Code: <strong>${appointment.confirmation_code || 'N/A'}</strong></p>
                     <p>Status: <span class="badge bg-${getStatusBadge(appointment.status)}">${appointment.status}</span></p>
                 </div>

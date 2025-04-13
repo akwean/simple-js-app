@@ -18,7 +18,11 @@ body {
 }
 
 .dashboard-section {
-    padding: 2rem 0;
+    display: flex;
+    flex-direction: column;
+    height: 100vh; /* Make the section fill the viewport height */
+    padding-top: 50px; /* Ensure it does not overlap with the navbar */
+    box-sizing: border-box; /* Include padding in height calculation */
 }
 
 .dashboard-header {
@@ -40,8 +44,11 @@ body {
 /* Modernized Nurse Dashboard Styles */
 
 .dashboard-content {
-    display: block;
-    gap: 2rem;
+    flex: 1; /* Allow the content to grow and fill available space */
+    overflow-y: auto; /* Enable scrolling for overflowing content */
+    display: flex;
+    flex-direction: column;
+    gap: 1rem; /* Add spacing between child elements */
 }
 
 .filters {
@@ -96,12 +103,13 @@ body {
 
 /* Appointment Cards */
 .appointments {
+    flex: 1; /* Allow appointments to take up remaining space */
+    overflow-y: auto; /* Ensure scrolling for overflowing content */
     background: #FFFFFF;
     padding: 2rem;
     border-radius: 12px;
     box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
-    height: 680px; /* Set a fixed height for the appointments container */
-    overflow-y: auto; /* Enable scrolling for overflowing content */
+    height: calc(100vh - 150px); /* Adjust height to fit within the viewport, subtracting header/footer height */
 }
 
 .appointments h4 {
@@ -118,13 +126,14 @@ body {
 
 .appointment-card {
     background: #FAFAFA;
-    padding: 1.8rem;
-    border-radius: 12px;
+    padding: 1.2rem; /* Reduce padding for smaller cards */
+    border-radius: 10px; /* Slightly smaller border radius */
     box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
     display: flex;
     flex-direction: column;
     justify-content: space-between;
     gap: 1rem;
+    font-size: 0.9rem; /* Reduce overall font size */
     transition: box-shadow 0.3s ease, transform 0.3s ease;
 }
 
@@ -138,23 +147,23 @@ body {
 }
 
 .appointment-card .details h5 {
-    font-size: 1.2rem;
+    font-size: 1rem; /* Slightly smaller font size for the title */
     font-weight: 600;
     margin: 0;
     color: #2b2a29;
 }
 
 .appointment-card .details p {
-    font-size: 0.95rem;
+    font-size: 0.85rem; /* Reduce font size for details */
     color: #555;
     margin: 0.3rem 0;
 }
 
 .appointment-card .details .badge {
-    font-size: 1rem; /* Increase font size */
+    font-size: 0.8rem; /* Reduce font size for the status badge */
     font-weight: bold; /* Make text bold */
     text-transform: uppercase; /* Make text uppercase */
-    padding: 0.5rem 1rem; /* Add padding */
+    padding: 0.3rem 0.6rem; /* Adjust padding for a smaller badge */
     border: 2px solid; /* Add border */
     border-radius: 8px; /* Rounded corners */
     display: inline-block; /* Inline-block for better alignment */
