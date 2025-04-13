@@ -44,8 +44,11 @@ document.addEventListener('DOMContentLoaded', function() {
 
             // Check for conflicts
             if (appointmentMap.has(key)) {
-                conflicts.push(appt);
-                conflicts.push(appointmentMap.get(key));
+                const existingAppt = appointmentMap.get(key);
+                if (appt.status === 'pending' || existingAppt.status === 'pending') {
+                    conflicts.push(appt);
+                    conflicts.push(existingAppt);
+                }
             } else {
                 appointmentMap.set(key, appt);
             }
