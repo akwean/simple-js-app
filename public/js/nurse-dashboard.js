@@ -10,7 +10,20 @@ document.addEventListener('DOMContentLoaded', function() {
     const toggleAllAppointmentsButton = document.getElementById('toggleAllAppointments');
 
     toggleAllAppointmentsButton.addEventListener('click', () => {
-        allAppointmentsContainer.classList.toggle('d-none');
+        const isHidden = allAppointmentsContainer.classList.contains('d-none');
+        allAppointmentsContainer.classList.toggle('d-none', !isHidden);
+        toggleAllAppointmentsButton.textContent = isHidden ? 'Collapse' : 'Expand';
+    });
+
+    // Add search functionality for all appointments
+    document.getElementById('searchAppointments').addEventListener('input', (e) => {
+        const searchTerm = e.target.value.toLowerCase();
+        const rows = allAppointmentsTable.querySelectorAll('tr');
+        rows.forEach(row => {
+            const cells = Array.from(row.querySelectorAll('td'));
+            const matches = cells.some(cell => cell.textContent.toLowerCase().includes(searchTerm));
+            row.style.display = matches ? '' : 'none';
+        });
     });
 
     async function fetchAppointments() {

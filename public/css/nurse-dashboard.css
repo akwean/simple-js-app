@@ -241,6 +241,44 @@ body {
     border-radius: 4px;
 }
 
+/* Updated All Appointments Section */
+.all-appointments-section .card {
+    border-radius: 12px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    overflow: hidden;
+}
+
+.all-appointments-section .card-header {
+    background-color: #FF9E44;
+    color: #fff;
+    padding: 1rem;
+    font-size: 1.2rem;
+    font-weight: 600;
+}
+
+.all-appointments-section .card-body {
+    padding: 1.5rem;
+    transition: max-height 0.3s ease, opacity 0.3s ease;
+}
+
+.all-appointments-section .table-responsive {
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    background: #fff;
+}
+
+.all-appointments-section .table th, 
+.all-appointments-section .table td {
+    vertical-align: middle;
+    text-align: center;
+}
+
+.all-appointments-section .pagination {
+    display: flex;
+    justify-content: center;
+    gap: 0.5rem;
+}
+
 /* Responsive Design */
 @media (max-width: 992px) {
     .dashboard-content {
