@@ -183,7 +183,13 @@ document.addEventListener('DOMContentLoaded', function() {
             const button = document.createElement('button');
             button.className = `btn btn-sm ${i === currentPage ? 'btn-primary' : 'btn-outline-primary'}`;
             button.textContent = i;
-            button.addEventListener('click', () => onPageChange(i));
+
+            // Prevent default behavior and handle pagination
+            button.addEventListener('click', (event) => {
+                event.preventDefault(); // Prevent page refresh
+                onPageChange(i); // Call the provided callback for the new page
+            });
+
             container.appendChild(button);
         }
     }
