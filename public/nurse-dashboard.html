@@ -18,9 +18,7 @@
         <a class="navbar-brand" href="index.html">
             <img src="images/logo.png" alt="BUPC Clinic Logo" width="35" height="35">
         </a>
-        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
-            <span class="navbar-toggler-icon"></span>
-        </button>
+        
         <div class="collapse navbar-collapse" id="navbarNav">
             <ul class="navbar-nav ms-auto">
             </ul>
@@ -30,33 +28,13 @@
 
 <section class="dashboard-section">
     <div class="container">
-        <div class="dashboard-header">
+        <div class="dashboard-header mt-5">
             <h1>Nurse Dashboard</h1>
             <p>Manage and approve clinic appointments efficiently</p>
         </div>
 
         <div class="dashboard-content">
-            <div class="filters">
-                <h4>Filters</h4>
-                <div class="filter-group">
-                    <label for="filterDate">Date</label>
-                    <input type="date" id="filterDate" class="form-control">
-                </div>
-                <div class="filter-group">
-                    <label for="filterStatus">Status</label>
-                    <select id="filterStatus" class="form-select">
-                        <option value="all">All</option>
-                        <option value="pending">Pending</option>
-                        <option value="approved">Approved</option>
-                        <option value="canceled">Canceled</option>
-                    </select>
-                </div>
-                <div class="filter-group">
-                    <label for="filterPatient">Patient Name</label>
-                    <input type="text" id="filterPatient" class="form-control" placeholder="Search by name">
-                </div>
-                <button class="btn btn-primary w-100 mt-3" id="applyFilters">Apply Filters</button>
-            </div>
+           
 
             <div class="appointments">
                 <h4>Appointments</h4>

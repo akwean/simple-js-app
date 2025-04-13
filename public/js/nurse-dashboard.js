@@ -1,6 +1,6 @@
 document.addEventListener('DOMContentLoaded', function() {
 
-    const appointmentsPerPage = 4;
+    const appointmentsPerPage = 6;
     const newAppointmentsContainer = document.getElementById('newAppointments');
     const upcomingAppointmentsContainer = document.getElementById('upcomingAppointments');
     const conflictAppointmentsContainer = document.getElementById('conflictAppointments');

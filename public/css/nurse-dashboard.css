@@ -40,8 +40,7 @@ body {
 /* Modernized Nurse Dashboard Styles */
 
 .dashboard-content {
-    display: grid;
-    grid-template-columns: 1fr 2fr;
+    display: block;
     gap: 2rem;
 }
 
@@ -97,11 +96,12 @@ body {
 
 /* Appointment Cards */
 .appointments {
-    flex: 2;
     background: #FFFFFF;
     padding: 2rem;
     border-radius: 12px;
     box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    height: 680px; /* Set a fixed height for the appointments container */
+    overflow-y: auto; /* Enable scrolling for overflowing content */
 }
 
 .appointments h4 {
@@ -189,6 +189,7 @@ body {
     display: flex;
     gap: 0.5rem;
     justify-content: flex-end;
+
 }
 
 .appointment-card .actions button {
