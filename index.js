@@ -187,23 +187,95 @@ app.get('/api/time-slots', (req, res) => {
 
 app.get('/api/appointments', (req, res) => {
   const query = `
-  SELECT 
-  a.appointment_id AS id,
-  CONCAT(u.first_name, ' ' ,u.last_name) AS patient,
-  a.appointment_date AS date,
-  a.appointment_time AS time,
-  a.status
-  FROM Appointments a 
-  JOIN Users u ON a.user_id = u.user_id
-  ORDER BY a.appointment_date, a.appointment_time
+    SELECT 
+      a.appointment_id AS id,
+      CONCAT(u.first_name, ' ', u.last_name) AS patient,
+      a.appointment_date AS date,
+      a.appointment_time AS time,
+      ac.confirmation_code,
+      CASE 
+        WHEN a.status = 'confirmed' THEN 'approved'
+        WHEN a.status = 'cancelled' THEN 'canceled'
+        ELSE a.status
+      END AS status
+    FROM Appointments a 
+    JOIN Users u ON a.user_id = u.user_id
+    LEFT JOIN AppointmentConfirmations ac ON a.appointment_id = ac.appointment_id
+    ORDER BY a.appointment_date DESC, a.appointment_time DESC
   `;
-
+  
   db.query(query, (err, results) => {
     if (err) {
       console.error(err);
       return res.status(500).json({ error: 'Database error' });
     }
     res.json(results);
+  });
+});
+
+// New endpoint to approve an appointment
+app.put('/api/appointments/:id/approve', (req, res) => {
+  const { id } = req.params;
+
+  // Query to get the date and time of the appointment being approved
+  const getAppointmentQuery = `
+    SELECT appointment_date, appointment_time 
+    FROM Appointments 
+    WHERE appointment_id = ?
+  `;
+
+  db.query(getAppointmentQuery, [id], (getErr, getResult) => {
+    if (getErr) {
+      console.error('Error fetching appointment details:', getErr);
+      return res.status(500).json({ error: 'Database error' });
+    }
+
+    if (getResult.length === 0) {
+      return res.status(404).json({ error: 'Appointment not found' });
+    }
+
+    const { appointment_date, appointment_time } = getResult[0];
+
+    // Approve the selected appointment
+    const approveQuery = `UPDATE Appointments SET status = 'confirmed' WHERE appointment_id = ?`;
+    db.query(approveQuery, [id], (approveErr) => {
+      if (approveErr) {
+        console.error('Error approving appointment:', approveErr);
+        return res.status(500).json({ error: 'Database error' });
+      }
+
+      // Automatically reject conflicting appointments
+      const rejectConflictsQuery = `
+        UPDATE Appointments 
+        SET status = 'cancelled' 
+        WHERE appointment_date = ? 
+          AND appointment_time = ? 
+          AND appointment_id != ? 
+          AND status = 'pending'
+      `;
+
+      db.query(rejectConflictsQuery, [appointment_date, appointment_time, id], (rejectErr) => {
+        if (rejectErr) {
+          console.error('Error rejecting conflicting appointments:', rejectErr);
+          return res.status(500).json({ error: 'Database error' });
+        }
+
+        res.json({ success: true, message: 'Appointment approved and conflicts rejected' });
+      });
+    });
+  });
+});
+
+// New endpoint to reject an appointment
+app.put('/api/appointments/:id/reject', (req, res) => {
+  const { id } = req.params;
+  const updateQuery = `UPDATE Appointments SET status = 'cancelled' WHERE appointment_id = ?`;
+  db.query(updateQuery, [id], (err, result) => {
+    if (err) {
+      console.error('Error rejecting appointment:', err);
+      return res.status(500).json({ error: 'Database error' });
+    }
+    res.json({ success: true, message: 'Appointment rejected' });
   });
 });
 

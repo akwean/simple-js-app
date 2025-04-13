@@ -4,6 +4,14 @@ document.addEventListener('DOMContentLoaded', function() {
     const newAppointmentsContainer = document.getElementById('newAppointments');
     const upcomingAppointmentsContainer = document.getElementById('upcomingAppointments');
     const conflictAppointmentsContainer = document.getElementById('conflictAppointments');
+    const allAppointmentsContainer = document.getElementById('allAppointmentsContainer');
+    const allAppointmentsTable = document.getElementById('allAppointmentsTable');
+    const allAppointmentsPagination = document.getElementById('allAppointmentsPagination');
+    const toggleAllAppointmentsButton = document.getElementById('toggleAllAppointments');
+
+    toggleAllAppointmentsButton.addEventListener('click', () => {
+        allAppointmentsContainer.classList.toggle('d-none');
+    });
 
     async function fetchAppointments() {
         try {
@@ -42,10 +50,10 @@ document.addEventListener('DOMContentLoaded', function() {
                 appointmentMap.set(key, appt);
             }
 
-            // Compare normalized dates
+            // Categorize appointments
             if (apptDate >= today && appt.status === 'pending') {
                 newAppointments.push(appt);
-            } else if (apptDate > today) {
+            } else if (apptDate > today && appt.status === 'approved') {
                 upcomingAppointments.push(appt);
             }
         });
@@ -53,7 +61,7 @@ document.addEventListener('DOMContentLoaded', function() {
         return { newAppointments, upcomingAppointments, conflicts: [...new Set(conflicts)] };
     }
 
-    // Updated renderAppointments to format the date field correctly
+    // Updated renderAppointments to format the date field correctly and include confirmation code
     function renderAppointments(container, appointments, page = 1) {
         container.innerHTML = '';
         const start = (page - 1) * appointmentsPerPage;
@@ -61,7 +69,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const paginatedAppointments = appointments.slice(start, end);
 
         if (paginatedAppointments.length === 0) {
-            container.innerHTML = '<p class="text-center text-muted">No appointments found.</p>';
+            container.innerHTML = '<p class="text-center text-muted">No new appointments found.</p>';
             return;
         }
 
@@ -80,6 +88,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 <div class="details">
                     <h5>${appointment.patient}</h5>
                     <p>${formattedDate} at ${appointment.time}</p>
+                    <p>Confirmation Code: <strong>${appointment.confirmation_code || 'N/A'}</strong></p>
                     <p>Status: <span class="badge bg-${getStatusBadge(appointment.status)}">${appointment.status}</span></p>
                 </div>
                 <div class="actions">
@@ -88,6 +97,24 @@ document.addEventListener('DOMContentLoaded', function() {
                 </div>
             `;
             container.appendChild(card);
+
+            // Add event listeners for approve and reject buttons
+            const approveButton = card.querySelector('.btn-approve');
+            const rejectButton = card.querySelector('.btn-reject');
+
+            if (approveButton) {
+                approveButton.addEventListener('click', async () => {
+                    await updateAppointmentStatus(appointment.id, 'approve');
+                    initDashboard(); // Refresh the dashboard
+                });
+            }
+
+            if (rejectButton) {
+                rejectButton.addEventListener('click', async () => {
+                    await updateAppointmentStatus(appointment.id, 'reject');
+                    initDashboard(); // Refresh the dashboard
+                });
+            }
         });
 
         // Add pagination controls
@@ -95,6 +122,22 @@ document.addEventListener('DOMContentLoaded', function() {
         renderPagination(container.nextElementSibling, totalPages, page, (newPage) => {
             renderAppointments(container, appointments, newPage);
         });
+    }
+
+    async function updateAppointmentStatus(id, action) {
+        try {
+            const response = await fetch(`/api/appointments/${id}/${action}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' }
+            });
+            if (!response.ok) {
+                throw new Error(`Failed to ${action} appointment`);
+            }
+            const result = await response.json();
+            console.log(result.message);
+        } catch (error) {
+            console.error(`Error updating appointment status:`, error);
+        }
     }
 
     // Render pagination controls
@@ -134,5 +177,29 @@ document.addEventListener('DOMContentLoaded', function() {
         renderAppointments(conflictAppointmentsContainer, conflicts);
     }
 
+    async function renderAllAppointments(page = 1) {
+        const appointments = await fetchAppointments();
+        const start = (page - 1) * appointmentsPerPage;
+        const end = start + appointmentsPerPage;
+        const paginatedAppointments = appointments.slice(start, end);
+
+        allAppointmentsTable.innerHTML = '';
+        paginatedAppointments.forEach(appointment => {
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                
+                <td>${appointment.patient}</td>
+                <td>${new Date(appointment.date).toLocaleDateString()}</td>
+                <td>${appointment.time}</td>
+                <td>${appointment.status}</td>
+            `;
+            allAppointmentsTable.appendChild(row);
+        });
+
+        const totalPages = Math.ceil(appointments.length / appointmentsPerPage);
+        renderPagination(allAppointmentsPagination, totalPages, page, renderAllAppointments);
+    }
+
     initDashboard();
+    renderAllAppointments();
 });

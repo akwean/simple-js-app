@@ -1,66 +1,174 @@
--- Users table to store user profiles
-CREATE TABLE Users (
-    user_id INT AUTO_INCREMENT PRIMARY KEY,
-    first_name VARCHAR(50) NOT NULL,
-    last_name VARCHAR(50) NOT NULL,
-    email VARCHAR(100) UNIQUE NOT NULL,
-    phone_number VARCHAR(15),
-    user_type ENUM('student', 'staff') NOT NULL,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
+-- MySQL dump 10.13  Distrib 8.0.41, for Linux (x86_64)
+--
+-- Host: localhost    Database: clinic_db
+-- ------------------------------------------------------
+-- Server version	8.0.41-0ubuntu0.24.04.1
 
--- Insert sample users
-INSERT INTO Users (first_name, last_name, email, phone_number, user_type) VALUES
-('John', 'Doe', 'john.doe@example.com', '1234567890', 'student'),
-('Jane', 'Smith', 'jane.smith@example.com', '0987654321', 'staff');
+/*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
+/*!40101 SET @OLD_CHARACTER_SET_RESULTS=@@CHARACTER_SET_RESULTS */;
+/*!40101 SET @OLD_COLLATION_CONNECTION=@@COLLATION_CONNECTION */;
+/*!50503 SET NAMES utf8mb4 */;
+/*!40103 SET @OLD_TIME_ZONE=@@TIME_ZONE */;
+/*!40103 SET TIME_ZONE='+00:00' */;
+/*!40014 SET @OLD_UNIQUE_CHECKS=@@UNIQUE_CHECKS, UNIQUE_CHECKS=0 */;
+/*!40014 SET @OLD_FOREIGN_KEY_CHECKS=@@FOREIGN_KEY_CHECKS, FOREIGN_KEY_CHECKS=0 */;
+/*!40101 SET @OLD_SQL_MODE=@@SQL_MODE, SQL_MODE='NO_AUTO_VALUE_ON_ZERO' */;
+/*!40111 SET @OLD_SQL_NOTES=@@SQL_NOTES, SQL_NOTES=0 */;
 
--- Services table to store available services
-CREATE TABLE Services (
-    service_id INT AUTO_INCREMENT PRIMARY KEY,
-    service_name VARCHAR(100) NOT NULL,
-    description TEXT,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
+--
+-- Table structure for table `AppointmentConfirmations`
+--
 
--- Insert sample services
-INSERT INTO Services (service_name, description) VALUES
-('Medical Consultation & Treatment', 'Professional medical consultations and treatments for all BUPC students and staff.'),
-('Physical Examination', 'For athletic activities, OJT/internship, extra-curricular activities, and scholarship requirements.'),
-('Dental Consultation & Treatment', 'Comprehensive dental care services to maintain your oral health.'),
-('Vaccination', 'Annual free Flu & Pneumonia vaccinations to keep our community healthy.');
+DROP TABLE IF EXISTS `AppointmentConfirmations`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `AppointmentConfirmations` (
+  `confirmation_id` int NOT NULL AUTO_INCREMENT,
+  `appointment_id` int NOT NULL,
+  `confirmation_code` varchar(20) NOT NULL,
+  `confirmed_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`confirmation_id`),
+  UNIQUE KEY `confirmation_code` (`confirmation_code`),
+  KEY `appointment_id` (`appointment_id`),
+  CONSTRAINT `AppointmentConfirmations_ibfk_1` FOREIGN KEY (`appointment_id`) REFERENCES `Appointments` (`appointment_id`) ON DELETE CASCADE
+) ENGINE=InnoDB AUTO_INCREMENT=9 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
 
--- Appointments table to store appointment details
-CREATE TABLE Appointments (
-    appointment_id INT AUTO_INCREMENT PRIMARY KEY,
-    user_id INT NOT NULL,
-    appointment_date DATE NOT NULL,
-    appointment_time TIME NOT NULL,
-    service_id INT NOT NULL,
-    additional_notes TEXT,
-    status ENUM('pending', 'confirmed', 'cancelled') DEFAULT 'pending',
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    -- Remove the UNIQUE constraint as we handle uniqueness checks in the app logic
-    -- UNIQUE (appointment_date, appointment_time),
-    FOREIGN KEY (user_id) REFERENCES Users(user_id) ON DELETE CASCADE,
-    FOREIGN KEY (service_id) REFERENCES Services(service_id) ON DELETE CASCADE
-);
+--
+-- Dumping data for table `AppointmentConfirmations`
+--
 
--- Stores confirmation details for appointments.
-CREATE TABLE AppointmentConfirmations (
-    confirmation_id INT AUTO_INCREMENT PRIMARY KEY,
-    appointment_id INT NOT NULL,
-    confirmation_code VARCHAR(20) UNIQUE NOT NULL,
-    confirmed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (appointment_id) REFERENCES Appointments(appointment_id) ON DELETE CASCADE
-);
+LOCK TABLES `AppointmentConfirmations` WRITE;
+/*!40000 ALTER TABLE `AppointmentConfirmations` DISABLE KEYS */;
+INSERT INTO `AppointmentConfirmations` VALUES (1,1,'BUPC-2025-1','2025-04-09 10:41:37'),(2,2,'BUPC-2025-2','2025-04-09 10:41:37'),(3,3,'BUPC-2025-3','2025-04-09 10:41:53'),(4,4,'BUPC-2025-4','2025-04-09 10:41:53'),(5,5,'BUPC-2025-5','2025-04-09 10:49:35'),(6,6,'BUPC-2025-6','2025-04-09 10:49:35'),(7,7,'BUPC-2025-7','2025-04-09 10:52:50'),(8,8,'BUPC-2025-8','2025-04-13 02:20:07');
+/*!40000 ALTER TABLE `AppointmentConfirmations` ENABLE KEYS */;
+UNLOCK TABLES;
 
--- Audit table to track changes in appointment statuses
-CREATE TABLE appointment_audit (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    appointment_id INT NOT NULL,
-    status ENUM('pending', 'approved', 'canceled') NOT NULL,
-    changed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (appointment_id) REFERENCES Appointments(appointment_id) ON DELETE CASCADE
-);
+--
+-- Table structure for table `Appointments`
+--
 
+DROP TABLE IF EXISTS `Appointments`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `Appointments` (
+  `appointment_id` int NOT NULL AUTO_INCREMENT,
+  `user_id` int NOT NULL,
+  `appointment_date` date NOT NULL,
+  `appointment_time` time NOT NULL,
+  `service_id` int NOT NULL,
+  `additional_notes` text,
+  `status` enum('pending','confirmed','cancelled') DEFAULT 'pending',
+  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`appointment_id`),
+  KEY `user_id` (`user_id`),
+  KEY `service_id` (`service_id`),
+  CONSTRAINT `Appointments_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `Users` (`user_id`) ON DELETE CASCADE,
+  CONSTRAINT `Appointments_ibfk_2` FOREIGN KEY (`service_id`) REFERENCES `Services` (`service_id`) ON DELETE CASCADE
+) ENGINE=InnoDB AUTO_INCREMENT=9 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
 
+--
+-- Dumping data for table `Appointments`
+--
+
+LOCK TABLES `Appointments` WRITE;
+/*!40000 ALTER TABLE `Appointments` DISABLE KEYS */;
+INSERT INTO `Appointments` VALUES (1,1,'2025-04-10','11:00:00',3,'-','confirmed','2025-04-09 10:41:37'),(2,1,'2025-04-10','11:00:00',3,'-','pending','2025-04-09 10:41:37'),(3,1,'2025-04-10','11:00:00',3,'-','pending','2025-04-09 10:41:53'),(4,1,'2025-04-10','11:00:00',3,'-','pending','2025-04-09 10:41:53'),(5,1,'2025-04-10','08:00:00',1,'-','pending','2025-04-09 10:49:35'),(6,1,'2025-04-10','08:00:00',1,'-','cancelled','2025-04-09 10:49:35'),(7,1,'2025-04-10','09:00:00',2,'-','pending','2025-04-09 10:52:50'),(8,1,'2025-04-14','11:00:00',2,'-','cancelled','2025-04-13 02:20:07');
+/*!40000 ALTER TABLE `Appointments` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
+-- Table structure for table `Services`
+--
+
+DROP TABLE IF EXISTS `Services`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `Services` (
+  `service_id` int NOT NULL AUTO_INCREMENT,
+  `service_name` varchar(100) NOT NULL,
+  `description` text,
+  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`service_id`)
+) ENGINE=InnoDB AUTO_INCREMENT=5 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `Services`
+--
+
+LOCK TABLES `Services` WRITE;
+/*!40000 ALTER TABLE `Services` DISABLE KEYS */;
+INSERT INTO `Services` VALUES (1,'Medical Consultation & Treatment','Professional medical consultations and treatments for all BUPC students and staff.','2025-04-09 10:41:11'),(2,'Physical Examination','For athletic activities, OJT/internship, extra-curricular activities, and scholarship requirements.','2025-04-09 10:41:11'),(3,'Dental Consultation & Treatment','Comprehensive dental care services to maintain your oral health.','2025-04-09 10:41:11'),(4,'Vaccination','Annual free Flu & Pneumonia vaccinations to keep our community healthy.','2025-04-09 10:41:11');
+/*!40000 ALTER TABLE `Services` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
+-- Table structure for table `Users`
+--
+
+DROP TABLE IF EXISTS `Users`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `Users` (
+  `user_id` int NOT NULL AUTO_INCREMENT,
+  `first_name` varchar(50) NOT NULL,
+  `last_name` varchar(50) NOT NULL,
+  `email` varchar(100) NOT NULL,
+  `phone_number` varchar(15) DEFAULT NULL,
+  `user_type` enum('student','staff') NOT NULL,
+  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`user_id`),
+  UNIQUE KEY `email` (`email`)
+) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `Users`
+--
+
+LOCK TABLES `Users` WRITE;
+/*!40000 ALTER TABLE `Users` DISABLE KEYS */;
+INSERT INTO `Users` VALUES (1,'John','Doe','john.doe@example.com','1234567890','student','2025-04-09 10:41:10'),(2,'Jane','Smith','jane.smith@example.com','0987654321','staff','2025-04-09 10:41:10');
+/*!40000 ALTER TABLE `Users` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
+-- Table structure for table `appointment_audit`
+--
+
+DROP TABLE IF EXISTS `appointment_audit`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `appointment_audit` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `appointment_id` int NOT NULL,
+  `status` enum('pending','approved','canceled') NOT NULL,
+  `changed_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  KEY `appointment_id` (`appointment_id`),
+  CONSTRAINT `appointment_audit_ibfk_1` FOREIGN KEY (`appointment_id`) REFERENCES `Appointments` (`appointment_id`) ON DELETE CASCADE
+) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `appointment_audit`
+--
+
+LOCK TABLES `appointment_audit` WRITE;
+/*!40000 ALTER TABLE `appointment_audit` DISABLE KEYS */;
+INSERT INTO `appointment_audit` VALUES (1,6,'canceled','2025-04-13 02:36:15');
+/*!40000 ALTER TABLE `appointment_audit` ENABLE KEYS */;
+UNLOCK TABLES;
+/*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
+
+/*!40101 SET SQL_MODE=@OLD_SQL_MODE */;
+/*!40014 SET FOREIGN_KEY_CHECKS=@OLD_FOREIGN_KEY_CHECKS */;
+/*!40014 SET UNIQUE_CHECKS=@OLD_UNIQUE_CHECKS */;
+/*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
+/*!40101 SET CHARACTER_SET_RESULTS=@OLD_CHARACTER_SET_RESULTS */;
+/*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
+/*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
+
+-- Dump completed on 2025-04-13 11:24:48
