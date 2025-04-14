@@ -1,0 +1,248 @@
+body {
+    font-family: 'Poppins', sans-serif;
+    background-color: #FFFAFA;
+    color: #333;
+    margin: 0;
+    padding: 0;
+}
+
+.container {
+    margin-top: 0; /* Remove excessive margin */
+}
+
+h1 {
+    font-size: 2.5rem;
+    font-weight: 600;
+    color: #2b2a29;
+    margin-bottom: 1rem;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 20px;
+    background: #FFF5EE;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+}
+
+th, td {
+    padding: 15px;
+    text-align: left;
+    border-bottom: 1px solid #ddd;
+}
+
+th {
+    background-color: #FF9E44;
+    color: white;
+    font-weight: 600;
+}
+
+tr:hover {
+    background-color: #FAEBD7;
+}
+
+.footer {
+    background: #FAEBD7;
+    color: #333;
+    padding: 20px 0;
+    text-align: center;
+    border-top: 1px solid #F5F5DC;
+    margin-top: 60px;
+}
+
+/* Medical History Styles */
+:root {
+    --primary-color: #FF9E44;
+    --secondary-color: #FAEBD7;
+    --text-color: #333;
+    --light-text: #555;
+    --light-bg: #FFF5EE;
+    --white: #FFFAFA;
+    --border-radius: 10px;
+    --box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+    --transition: all 0.3s ease;
+    --ease-in-out: cubic-bezier(0.645, 0.045, 0.355, 1);
+}
+
+.history-section {
+    min-height: 100vh;
+    background: linear-gradient(135deg, #FFF5EE, #FFFFF0);
+    padding: 100px 0 60px; /* Top padding accounts for navbar height */
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.history-container {
+    background: var(--white);
+    border-radius: var(--border-radius);
+    box-shadow: var(--box-shadow);
+    width: 100%;
+    max-width: 1100px;
+    margin: 0 auto;
+    overflow: hidden;
+    animation: fadeIn 1s var(--ease-in-out) forwards;
+    padding: 2rem;
+}
+
+.section-header {
+    text-align: center;
+    margin-bottom: 30px;
+    animation: fadeInUp 0.8s var(--ease-in-out) forwards;
+}
+
+.section-header h2 {
+    font-size: 2.2rem;
+    font-weight: 700;
+    color: #333;
+    margin-bottom: 15px;
+}
+
+.section-header p {
+    font-size: 1.1rem;
+    color: #555;
+    max-width: 700px;
+    margin: 0 auto;
+}
+
+.table {
+    margin-bottom: 0;
+}
+
+.table thead th {
+    background-color: var(--secondary-color);
+    color: var(--text-color);
+    font-weight: 600;
+    border: none;
+    padding: 1rem;
+}
+
+.table tbody td {
+    padding: 1rem;
+    vertical-align: middle;
+    border-color: #f0f0f0;
+}
+
+.table tbody tr:hover {
+    background-color: rgba(255, 158, 68, 0.05);
+}
+
+.status-pending {
+    color: #ff9e44;
+    background-color: rgba(255, 158, 68, 0.1);
+    padding: 0.35rem 0.65rem;
+    border-radius: 20px;
+    font-weight: 500;
+    font-size: 0.85rem;
+}
+
+.status-approved {
+    color: #28a745;
+    background-color: rgba(40, 167, 69, 0.1);
+    padding: 0.35rem 0.65rem;
+    border-radius: 20px;
+    font-weight: 500;
+    font-size: 0.85rem;
+}
+
+.status-canceled, .status-rejected {
+    color: #dc3545;
+    background-color: rgba(220, 53, 69, 0.1);
+    padding: 0.35rem 0.65rem;
+    border-radius: 20px;
+    font-weight: 500;
+    font-size: 0.85rem;
+}
+
+/* Pagination styling */
+.pagination-container {
+    display: flex;
+    justify-content: center;
+    gap: 0.5rem;
+    margin-top: 1.5rem;
+}
+
+.pagination-btn {
+    background-color: #fff;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    padding: 0.5rem 0.8rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.pagination-btn:hover {
+    background-color: #f8f9fa;
+}
+
+.pagination-btn.active {
+    background-color: var(--primary-color);
+    color: white;
+    border-color: var(--primary-color);
+}
+
+@media (max-width: 992px) {
+    .history-container {
+        max-width: 90%;
+    }
+}
+
+@media (max-width: 768px) {
+    .table thead {
+        display: none;
+    }
+    
+    .table, .table tbody, .table tr, .table td {
+        display: block;
+        width: 100%;
+    }
+    
+    .table tr {
+        margin-bottom: 1rem;
+        border: 1px solid #f0f0f0;
+        border-radius: var(--border-radius);
+        background-color: #fff;
+    }
+    
+    .table td {
+        text-align: right;
+        padding: 0.75rem;
+        position: relative;
+        border-bottom: 1px solid #f0f0f0;
+    }
+    
+    .table td::before {
+        content: attr(data-label);
+        position: absolute;
+        left: 0.75rem;
+        width: 45%;
+        padding-right: 10px;
+        white-space: nowrap;
+        text-align: left;
+        font-weight: 600;
+    }
+}
+
+@keyframes fadeIn {
+    0% {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    100% {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(40px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}

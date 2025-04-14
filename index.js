@@ -281,6 +281,40 @@ app.put('/api/appointments/:id/reject', (req, res) => {
   });
 });
 
+// Updated API route to fetch medical history from the database
+app.get('/api/medical-history', (req, res) => {
+    const userId = req.query.user_id; // Get user_id from query params
+
+    if (!userId) {
+        return res.status(400).json({ error: 'User ID is required' });
+    }
+
+    const query = `
+        SELECT 
+            a.appointment_date AS date, 
+            TIME_FORMAT(a.appointment_time, '%h:%i %p') AS time,
+            s.service_name AS description,
+            a.status,
+            a.additional_notes AS notes,
+            ac.confirmation_code,
+            a.created_at
+        FROM Appointments a
+        JOIN Services s ON a.service_id = s.service_id
+        LEFT JOIN AppointmentConfirmations ac ON a.appointment_id = ac.appointment_id
+        WHERE a.user_id = ?
+        ORDER BY a.created_at DESC
+    `;
+
+    db.query(query, [userId], (err, results) => {
+        if (err) {
+            console.error('Error fetching medical history:', err);
+            return res.status(500).json({ error: 'Database error' });
+        }
+        
+        res.json(results);
+    });
+});
+
 app.listen(port, () => {
   console.log(`Server listening on port ${port}`);
   console.log(`Visit http://localhost:${port} in your browser`);
