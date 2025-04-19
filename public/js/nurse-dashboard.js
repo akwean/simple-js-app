@@ -9,10 +9,16 @@ document.addEventListener('DOMContentLoaded', function() {
     const allAppointmentsPagination = document.getElementById('allAppointmentsPagination');
     const toggleAllAppointmentsButton = document.getElementById('toggleAllAppointments');
 
+    // Improved toggle functionality to ensure data is shown when expanded
     toggleAllAppointmentsButton.addEventListener('click', () => {
         const isHidden = allAppointmentsContainer.classList.contains('d-none');
         allAppointmentsContainer.classList.toggle('d-none', !isHidden);
         toggleAllAppointmentsButton.textContent = isHidden ? 'Collapse' : 'Expand';
+        
+        // If expanding the section, ensure appointments are rendered
+        if (isHidden) {
+            renderAllAppointments(1);
+        }
     });
 
     // Add search and filter functionality for all appointments
@@ -60,18 +66,30 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     async function renderAllAppointments(page = 1) {
+        // Clear loading or no data messages
+        allAppointmentsTable.innerHTML = '';
+        
+        // If no filtered appointments available, show all appointments
+        if (!filteredAppointments || filteredAppointments.length === 0) {
+            filteredAppointments = [...allAppointments]; // Use a copy of all appointments
+        }
+        
         const start = (page - 1) * appointmentsPerPage;
         const end = start + appointmentsPerPage;
         const paginatedAppointments = filteredAppointments.slice(start, end);
+        
+        if (paginatedAppointments.length === 0) {
+            allAppointmentsTable.innerHTML = '<tr><td colspan="4" class="text-center">No appointments found</td></tr>';
+            return;
+        }
 
-        allAppointmentsTable.innerHTML = '';
         paginatedAppointments.forEach(appointment => {
             const row = document.createElement('tr');
             row.innerHTML = `
                 <td>${appointment.patient}</td>
                 <td>${new Date(appointment.date).toLocaleDateString()}</td>
                 <td>${appointment.time}</td>
-                <td>${appointment.status}</td>
+                <td><span class="badge bg-${getStatusBadge(appointment.status)}">${appointment.status}</span></td>
             `;
             allAppointmentsTable.appendChild(row);
         });
@@ -241,14 +259,16 @@ document.addEventListener('DOMContentLoaded', function() {
     // Pass the fetched appointments to categorizeAppointments in initDashboard
     async function initDashboard() {
         await fetchAppointments();
-        filteredAppointments = allAppointments; // Initialize filteredAppointments with all data
+        filteredAppointments = [...allAppointments]; // Initialize filteredAppointments with a copy of all data
         const { newAppointments, upcomingAppointments, conflicts } = categorizeAppointments(allAppointments);
 
         renderAppointments(newAppointmentsContainer, newAppointments);
         renderAppointments(upcomingAppointmentsContainer, upcomingAppointments);
         renderAppointments(conflictAppointmentsContainer, conflicts);
+        
+        // Make sure the all appointments table is ready to be displayed with data
+        renderAllAppointments(1);
     }
 
     initDashboard();
-    renderAllAppointments();
 });
