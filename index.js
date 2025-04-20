@@ -1,41 +1,229 @@
 const express = require('express');
 const path = require('path');
 const db = require('./db'); // Use the existing db.js file for database connection
+const bcrypt = require('bcrypt');
+const session = require('express-session');
 const app = express();
 const port = 3000;
 
-// Add bcrypt for password hashing
-const bcrypt = require('bcrypt');
-const saltRounds = 10;
-
+// Middleware
 app.use(express.json());
-
-// Serve static files from the 'public' directory
 app.use(express.static(path.join(__dirname, 'public')));
+
+// Session setup
+app.use(session({
+  secret: 'bupc_clinic_secret_key',
+  resave: false,
+  saveUninitialized: false,
+  cookie: { 
+    secure: false, // Set to true if using HTTPS
+    maxAge: 24 * 60 * 60 * 1000 // 24 hours
+  }
+}));
+
+// Authentication middleware
+function isAuthenticated(req, res, next) {
+  if (req.session.userId) {
+    return next();
+  }
+  
+  // For API requests, return a more descriptive JSON error
+  if (req.path.startsWith('/api/')) {
+    return res.status(401).json({ 
+      error: 'Authentication required',
+      message: 'Your session may have expired or you are not logged in yet',
+      loginUrl: '/login.html',
+      helpText: 'Please sign in to access this feature' 
+    });
+  }
+  
+  // For page requests, redirect to login
+  res.redirect('/login.html');
+}
+
+// Staff authorization middleware
+function isStaff(req, res, next) {
+  if (req.session.userType === 'staff') {
+    return next();
+  }
+  
+  // For API requests, return JSON error
+  if (req.path.startsWith('/api/')) {
+    return res.status(403).json({ error: 'Staff access required' });
+  }
+  
+  // For page requests, redirect to home
+  res.redirect('/');
+}
 
 // Route for the homepage
 app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
-// Route for the staff
-app.get('/nurse-dashboard', (req, res) => {
+// Route for staff dashboard - protected
+app.get('/nurse-dashboard', isAuthenticated, isStaff, (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'nurse-dashboard.html'));
 });
 
-// Improved appointment creation with proper date handling
-app.post('/api/appointments', (req, res) => {
+// Login endpoint
+app.post('/api/login', (req, res) => {
+  const { email, password } = req.body;
+  
+  if (!email || !password) {
+    return res.status(400).json({ error: 'Email and password required' });
+  }
+  
+  const query = 'SELECT user_id, first_name, last_name, email, password, user_type FROM Users WHERE email = ?';
+  
+  db.query(query, [email], async (err, results) => {
+    if (err) {
+      console.error('Database error during login:', err);
+      return res.status(500).json({ error: 'Server error' });
+    }
+    
+    if (results.length === 0) {
+      return res.status(401).json({ error: 'Invalid email or password' });
+    }
+    
+    const user = results[0];
+    
+    try {
+      // For existing users without hashed passwords (temporary for development)
+      if (user.password === 'defaultpassword') {
+        // Set session data
+        req.session.userId = user.user_id;
+        req.session.userType = user.user_type;
+        req.session.userName = `${user.first_name} ${user.last_name}`;
+        
+        return res.json({
+          user_id: user.user_id,
+          name: `${user.first_name} ${user.last_name}`,
+          email: user.email,
+          user_type: user.user_type
+        });
+      }
+      
+      // For users with hashed passwords
+      const match = await bcrypt.compare(password, user.password);
+      
+      if (!match) {
+        return res.status(401).json({ error: 'Invalid email or password' });
+      }
+      
+      // Set session data
+      req.session.userId = user.user_id;
+      req.session.userType = user.user_type;
+      req.session.userName = `${user.first_name} ${user.last_name}`;
+      
+      // Return user info (without password)
+      res.json({
+        user_id: user.user_id,
+        name: `${user.first_name} ${user.last_name}`,
+        email: user.email,
+        user_type: user.user_type
+      });
+      
+    } catch (error) {
+      console.error('Error comparing passwords:', error);
+      res.status(500).json({ error: 'Server error' });
+    }
+  });
+});
+
+// Logout endpoint
+app.get('/api/logout', (req, res) => {
+  req.session.destroy(err => {
+    if (err) {
+      return res.status(500).json({ error: 'Could not log out' });
+    }
+    res.json({ message: 'Logged out successfully' });
+  });
+});
+
+// User registration endpoint
+app.post('/api/register', async (req, res) => {
+  try {
+    const { first_name, last_name, email, phone_number, password, user_type = 'student' } = req.body;
+    
+    // Validate required fields
+    if (!first_name || !last_name || !email || !password) {
+      return res.status(400).json({ error: 'Missing required fields' });
+    }
+    
+    // Check if email already exists
+    const checkEmailQuery = 'SELECT user_id FROM Users WHERE email = ?';
+    db.query(checkEmailQuery, [email], async (checkErr, checkResult) => {
+      if (checkErr) {
+        console.error('Error checking email:', checkErr);
+        return res.status(500).json({ error: 'Database error' });
+      }
+      
+      if (checkResult.length > 0) {
+        return res.status(409).json({ error: 'Email already registered' });
+      }
+      
+      // Hash the password
+      const hashedPassword = await bcrypt.hash(password, 10);
+      
+      // Insert new user
+      const insertQuery = `
+        INSERT INTO Users (first_name, last_name, email, phone_number, password, user_type)
+        VALUES (?, ?, ?, ?, ?, ?)
+      `;
+      
+      db.query(
+        insertQuery, 
+        [first_name, last_name, email, phone_number, hashedPassword, user_type], 
+        (insertErr, insertResult) => {
+          if (insertErr) {
+            console.error('Error registering user:', insertErr);
+            return res.status(500).json({ error: 'Database error' });
+          }
+          
+          // Return success but don't include password
+          res.status(201).json({ 
+            message: 'Registration successful',
+            user_id: insertResult.insertId,
+            first_name,
+            last_name,
+            email
+          });
+        }
+      );
+    });
+  } catch (error) {
+    console.error('Server error during registration:', error);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// Get session user info
+app.get('/api/user/me', isAuthenticated, (req, res) => {
+  res.json({
+    user_id: req.session.userId,
+    name: req.session.userName,
+    user_type: req.session.userType
+  });
+});
+
+// Protected appointment routes
+app.post('/api/appointments', isAuthenticated, (req, res) => {
   // Generate a unique request ID to track duplicates
   const requestId = Date.now() + '-' + Math.random().toString(36).substr(2, 9);
   console.log(`Processing appointment request ${requestId}`);
   
-  const { date, time, service, notes, userId } = req.body;
+  // Get user ID from session instead of request body
+  const userId = req.session.userId;
+  const { date, time, service, notes } = req.body;
+  
+  console.log(`Creating appointment for user ID: ${userId} from session`);
   
   // Validate required fields
-  if (!date || !time || !service || !userId) {
+  if (!date || !time || !service) {
     return res.status(400).json({ error: 'Missing required fields' });
   }
-
+  
   try {
     // Parse date correctly to avoid timezone issues
     const parts = date.split(',');
@@ -317,63 +505,6 @@ app.get('/api/medical-history', (req, res) => {
         
         res.json(results);
     });
-});
-
-// Route for user registration
-app.post('/api/register', async (req, res) => {
-  try {
-    const { first_name, last_name, email, phone_number, password, user_type = 'student' } = req.body;
-    
-    // Validate required fields
-    if (!first_name || !last_name || !email || !password) {
-      return res.status(400).json({ error: 'Missing required fields' });
-    }
-    
-    // Check if email already exists
-    const checkEmailQuery = 'SELECT user_id FROM Users WHERE email = ?';
-    db.query(checkEmailQuery, [email], async (checkErr, checkResult) => {
-      if (checkErr) {
-        console.error('Error checking email:', checkErr);
-        return res.status(500).json({ error: 'Database error' });
-      }
-      
-      if (checkResult.length > 0) {
-        return res.status(409).json({ error: 'Email already registered' });
-      }
-      
-      // Hash the password
-      const hashedPassword = await bcrypt.hash(password, saltRounds);
-      
-      // Insert new user
-      const insertQuery = `
-        INSERT INTO Users (first_name, last_name, email, phone_number, password, user_type)
-        VALUES (?, ?, ?, ?, ?, ?)
-      `;
-      
-      db.query(
-        insertQuery, 
-        [first_name, last_name, email, phone_number, hashedPassword, user_type], 
-        (insertErr, insertResult) => {
-          if (insertErr) {
-            console.error('Error registering user:', insertErr);
-            return res.status(500).json({ error: 'Database error' });
-          }
-          
-          // Return success but don't include password
-          res.status(201).json({ 
-            message: 'Registration successful',
-            user_id: insertResult.insertId,
-            first_name,
-            last_name,
-            email
-          });
-        }
-      );
-    });
-  } catch (error) {
-    console.error('Server error during registration:', error);
-    res.status(500).json({ error: 'Server error' });
-  }
 });
 
 app.listen(port, () => {

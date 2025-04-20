@@ -31,7 +31,7 @@ CREATE TABLE `AppointmentConfirmations` (
   UNIQUE KEY `confirmation_code` (`confirmation_code`),
   KEY `appointment_id` (`appointment_id`),
   CONSTRAINT `AppointmentConfirmations_ibfk_1` FOREIGN KEY (`appointment_id`) REFERENCES `Appointments` (`appointment_id`) ON DELETE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=9 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=10 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -40,7 +40,7 @@ CREATE TABLE `AppointmentConfirmations` (
 
 LOCK TABLES `AppointmentConfirmations` WRITE;
 /*!40000 ALTER TABLE `AppointmentConfirmations` DISABLE KEYS */;
-INSERT INTO `AppointmentConfirmations` VALUES (1,1,'BUPC-2025-1','2025-04-09 10:41:37'),(2,2,'BUPC-2025-2','2025-04-09 10:41:37'),(3,3,'BUPC-2025-3','2025-04-09 10:41:53'),(4,4,'BUPC-2025-4','2025-04-09 10:41:53'),(5,5,'BUPC-2025-5','2025-04-09 10:49:35'),(6,6,'BUPC-2025-6','2025-04-09 10:49:35'),(7,7,'BUPC-2025-7','2025-04-09 10:52:50'),(8,8,'BUPC-2025-8','2025-04-13 02:20:07');
+INSERT INTO `AppointmentConfirmations` VALUES (1,1,'BUPC-2025-1','2025-04-13 04:31:21'),(2,2,'BUPC-2025-2','2025-04-13 04:33:30'),(3,3,'BUPC-2025-3','2025-04-13 04:43:31'),(4,4,'BUPC-2025-4','2025-04-13 04:52:21'),(5,5,'BUPC-2025-5','2025-04-13 04:52:30'),(6,6,'BUPC-2025-6','2025-04-13 04:54:45'),(7,7,'BUPC-2025-7','2025-04-13 04:54:55'),(8,8,'BUPC-2025-8','2025-04-13 08:31:08'),(9,9,'BUPC-2025-9','2025-04-14 08:37:56');
 /*!40000 ALTER TABLE `AppointmentConfirmations` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -65,7 +65,7 @@ CREATE TABLE `Appointments` (
   KEY `service_id` (`service_id`),
   CONSTRAINT `Appointments_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `Users` (`user_id`) ON DELETE CASCADE,
   CONSTRAINT `Appointments_ibfk_2` FOREIGN KEY (`service_id`) REFERENCES `Services` (`service_id`) ON DELETE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=9 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=10 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -74,7 +74,7 @@ CREATE TABLE `Appointments` (
 
 LOCK TABLES `Appointments` WRITE;
 /*!40000 ALTER TABLE `Appointments` DISABLE KEYS */;
-INSERT INTO `Appointments` VALUES (1,1,'2025-04-10','11:00:00',3,'-','confirmed','2025-04-09 10:41:37'),(2,1,'2025-04-10','11:00:00',3,'-','pending','2025-04-09 10:41:37'),(3,1,'2025-04-10','11:00:00',3,'-','pending','2025-04-09 10:41:53'),(4,1,'2025-04-10','11:00:00',3,'-','pending','2025-04-09 10:41:53'),(5,1,'2025-04-10','08:00:00',1,'-','pending','2025-04-09 10:49:35'),(6,1,'2025-04-10','08:00:00',1,'-','cancelled','2025-04-09 10:49:35'),(7,1,'2025-04-10','09:00:00',2,'-','pending','2025-04-09 10:52:50'),(8,1,'2025-04-14','11:00:00',2,'-','cancelled','2025-04-13 02:20:07');
+INSERT INTO `Appointments` VALUES (1,1,'2025-04-30','11:00:00',1,'i want to play','confirmed','2025-04-13 04:31:21'),(2,1,'2025-04-30','16:00:00',1,'well i want to see beautiful nurse','cancelled','2025-04-13 04:33:30'),(3,1,'2025-04-14','09:00:00',2,'-','confirmed','2025-04-13 04:43:31'),(4,1,'2025-04-17','11:00:00',2,'-','confirmed','2025-04-13 04:52:21'),(5,1,'2025-04-17','11:00:00',2,'-','cancelled','2025-04-13 04:52:30'),(6,1,'2025-04-16','11:00:00',2,'-','cancelled','2025-04-13 04:54:45'),(7,1,'2025-04-16','11:00:00',2,'-','confirmed','2025-04-13 04:54:55'),(8,4,'2025-04-14','11:00:00',1,'-','pending','2025-04-13 08:31:08'),(9,4,'2025-04-15','10:00:00',2,'-','pending','2025-04-14 08:37:55');
 /*!40000 ALTER TABLE `Appointments` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -117,11 +117,12 @@ CREATE TABLE `Users` (
   `last_name` varchar(50) NOT NULL,
   `email` varchar(100) NOT NULL,
   `phone_number` varchar(15) DEFAULT NULL,
+  `password` varchar(255) NOT NULL,
   `user_type` enum('student','staff') NOT NULL,
   `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`user_id`),
   UNIQUE KEY `email` (`email`)
-) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=6 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -130,7 +131,7 @@ CREATE TABLE `Users` (
 
 LOCK TABLES `Users` WRITE;
 /*!40000 ALTER TABLE `Users` DISABLE KEYS */;
-INSERT INTO `Users` VALUES (1,'John','Doe','john.doe@example.com','1234567890','student','2025-04-09 10:41:10'),(2,'Jane','Smith','jane.smith@example.com','0987654321','staff','2025-04-09 10:41:10');
+INSERT INTO `Users` VALUES (1,'John','Doe','john.doe@example.com','1234567890','','student','2025-04-09 10:41:10'),(2,'Jane','Smith','jane.smith@example.com','0987654321','','staff','2025-04-09 10:41:10'),(4,'cj','doe','cj.doe@example.com','123456789','','student','2025-04-13 08:27:22'),(5,'Third ','Student','sample@mail.com','01234567891','$2b$10$UO4M.iaJx.cQvKmdb4u1UuqjUU81/imRRr/lvHE.LEZK/OFH0Ywr6','student','2025-04-20 00:51:45');
 /*!40000 ALTER TABLE `Users` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -171,4 +172,4 @@ UNLOCK TABLES;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2025-04-13 11:24:48
+-- Dump completed on 2025-04-20  9:01:49

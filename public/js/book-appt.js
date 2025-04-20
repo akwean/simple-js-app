@@ -421,6 +421,41 @@ document.addEventListener('DOMContentLoaded', function() {
             } else {
                 document.getElementById('notesRow').style.display = 'none';
             }
+
+            // Check if user is logged in before allowing confirmation
+            const userString = localStorage.getItem('user');
+            if (!userString) {
+                // If not logged in, disable the confirm button
+                const confirmBtn = document.getElementById('confirmBtn');
+                if (confirmBtn) {
+                    confirmBtn.disabled = true;
+                    confirmBtn.title = "Please log in to book an appointment";
+                    
+                    // Add a warning message
+                    const warningMsg = document.createElement('div');
+                    warningMsg.className = 'login-warning';
+                    warningMsg.innerHTML = '<i class="fas fa-exclamation-triangle"></i> You must be logged in to book an appointment.';
+                    
+                    // Insert after the confirmation details
+                    const confirmDetails = document.querySelector('.confirmation-details');
+                    if (confirmDetails && !document.querySelector('.login-warning')) {
+                        confirmDetails.parentNode.insertBefore(warningMsg, confirmDetails.nextSibling);
+                    }
+                }
+            } else {
+                // If logged in, ensure the button is enabled
+                const confirmBtn = document.getElementById('confirmBtn');
+                if (confirmBtn) {
+                    confirmBtn.disabled = false;
+                    confirmBtn.title = "";
+                }
+                
+                // Remove any warning message
+                const warningMsg = document.querySelector('.login-warning');
+                if (warningMsg) {
+                    warningMsg.remove();
+                }
+            }
         },
         
         setupEventListeners: function() {
@@ -457,50 +492,12 @@ document.addEventListener('DOMContentLoaded', function() {
                         date: document.getElementById('confirmDate').textContent,
                         time: document.getElementById('confirmTime').textContent,
                         service: document.getElementById('confirmService').textContent,
-                        notes: document.getElementById('confirmNotes').textContent || null,
-                        userId: 4 // Replace with actual user ID 
+                        notes: document.getElementById('confirmNotes').textContent || null
                     };
                     
                     console.log('Submitting appointment:', appointmentData);
                     
-                    const response = await fetch('/api/appointments', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify(appointmentData)
-                    });
-                    
-                    const result = await response.json();
-                    
-                    if (!response.ok) {
-                        if (response.status === 409) {
-                            // Special handling for conflict
-                            throw new Error(result.message || 'This time slot is already taken.');
-                        } else {
-                            throw new Error(result.message || result.error || 'Failed to book appointment');
-                        }
-                    }
-                    
-                    // Success path - appointment was booked
-                    document.getElementById('confirmationCode').textContent = result.confirmationCode;
-                    
-                    // Display the appointment details
-                    document.getElementById('successDate').textContent = appointmentData.date;
-                    document.getElementById('successTime').textContent = appointmentData.time;
-                    document.getElementById('successService').textContent = appointmentData.service;
-                    
-                    // Hide all booking steps and show success message
-                    document.querySelectorAll('.booking-step').forEach(el => {
-                        el.style.display = 'none';
-                    });
-                    document.getElementById('successMessage').style.display = 'block';
-                    document.getElementById('successMessage').classList.add('animated');
-                    document.getElementById('progressIndicator').style.width = '100%';
-                    
-                    // Set all steps as completed
-                    document.querySelectorAll('.step').forEach(el => {
-                        el.classList.remove('active');
-                        el.classList.add('completed');
-                    });
+                    await submitAppointment(appointmentData);
                 } catch (error) {
                     console.error('Error booking appointment:', error);
                     
@@ -530,6 +527,135 @@ document.addEventListener('DOMContentLoaded', function() {
             });
         }
     };
+
+    // Enhance the submit appointment function
+    async function submitAppointment(appointmentData) {
+        try {
+            // Get the currently logged in user
+            const userString = localStorage.getItem('user');
+            if (!userString) {
+                showAuthError('You must be logged in to book an appointment.', '/login.html?redirect=appointments.html');
+                return;
+            }
+            
+            const user = JSON.parse(userString);
+            
+            // Disable the button and show loading state
+            const confirmBtn = document.getElementById('confirmBtn');
+            confirmBtn.disabled = true;
+            confirmBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Booking...';
+            
+            // Add the user ID from the logged-in user
+            appointmentData.userId = user.id;
+            
+            // Submit to the server
+            const response = await fetch('/api/appointments', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(appointmentData)
+            });
+            
+            const result = await response.json();
+            
+            if (!response.ok) {
+                // Handle auth error
+                if (response.status === 401) {
+                    showAuthError(result.message || 'Your session has expired. Please log in again.', '/login.html?redirect=appointments.html');
+                    // Save appointment data for later
+                    localStorage.setItem('pendingAppointment', JSON.stringify(appointmentData));
+                    confirmBtn.disabled = false;
+                    confirmBtn.textContent = 'Confirm Appointment';
+                    return;
+                }
+                
+                // For other errors
+                showAlert(result.error || 'Booking failed', 'error');
+                confirmBtn.disabled = false;
+                confirmBtn.textContent = 'Confirm Appointment';
+                return;
+            }
+            
+            // Success handling continues as before
+            document.getElementById('confirmationCode').textContent = result.confirmationCode;
+            
+            // Display the appointment details
+            document.getElementById('successDate').textContent = appointmentData.date;
+            document.getElementById('successTime').textContent = appointmentData.time;
+            document.getElementById('successService').textContent = appointmentData.service;
+            
+            // Hide all booking steps and show success message
+            document.querySelectorAll('.booking-step').forEach(el => {
+                el.style.display = 'none';
+            });
+            document.getElementById('successMessage').style.display = 'block';
+            document.getElementById('successMessage').classList.add('animated');
+            document.getElementById('progressIndicator').style.width = '100%';
+            
+            // Set all steps as completed
+            document.querySelectorAll('.step').forEach(el => {
+                el.classList.remove('active');
+                el.classList.add('completed');
+            });
+        } catch (error) {
+            console.error('Error:', error);
+            // Show a more user-friendly error message
+            const errorMessage = document.createElement('div');
+            errorMessage.className = 'alert alert-danger';
+            errorMessage.innerHTML = `
+                <strong>Booking failed:</strong> ${error.message || 'Unknown error'}
+            `;
+            
+            // Insert the error message at the top of the confirmation step
+            const confirmStep = document.getElementById('step4');
+            
+            // Remove any existing error messages
+            const existingError = confirmStep.querySelector('.alert');
+            if (existingError) {
+                confirmStep.removeChild(existingError);
+            }
+            
+            confirmStep.insertBefore(errorMessage, confirmStep.firstChild);
+        } finally {
+            // Always reset submitting state and button
+            const confirmBtn = document.getElementById('confirmBtn');
+            confirmBtn.disabled = false;
+            confirmBtn.textContent = 'Confirm Appointment';
+        }
+    }
+
+    // Function to show authentication error with login option
+    function showAuthError(message, loginUrl) {
+        const overlay = document.createElement('div');
+        overlay.className = 'auth-error-overlay';
+        
+        const dialog = document.createElement('div');
+        dialog.className = 'auth-error-dialog';
+        
+        dialog.innerHTML = `
+            <div class="auth-error-header">
+                <i class="fas fa-exclamation-circle"></i>
+                <h3>Authentication Required</h3>
+            </div>
+            <div class="auth-error-body">
+                <p>${message}</p>
+                <p>Please log in to continue with your appointment booking.</p>
+            </div>
+            <div class="auth-error-footer">
+                <button id="auth-error-cancel" class="btn-secondary">Cancel</button>
+                <a href="${loginUrl}" class="btn-primary">Log in now</a>
+            </div>
+        `;
+        
+        overlay.appendChild(dialog);
+        document.body.appendChild(overlay);
+        
+        // Handle cancel button
+        document.getElementById('auth-error-cancel').addEventListener('click', function() {
+            document.body.removeChild(overlay);
+        });
+    }
     
     // ----- Initialize Booking Flow -----
     function initBookingFlow() {

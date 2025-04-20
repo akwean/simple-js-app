@@ -588,6 +588,25 @@
     animation: pulseEffect 2s infinite;
 }
 
+/* Login warning message in confirmation step */
+.login-warning {
+  background-color: #fff3cd;
+  color: #856404;
+  padding: 1rem;
+  border-radius: var(--border-radius);
+  margin: 1rem 0;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  animation: fadeIn 0.5s var(--ease-in-out);
+}
+
+.login-warning i {
+  font-size: 1.2rem;
+  margin-right: 0.5rem;
+  color: #ffc107;
+}
+
 /* Success Message */
 .success-message {
     text-align: center;
@@ -664,6 +683,92 @@
     font-family: monospace;
     letter-spacing: 1px;
     font-weight: 600;
+}
+
+/* Auth Error Dialog Styling */
+.auth-error-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.6);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+  animation: fadeIn 0.3s var(--ease-in-out);
+}
+
+.auth-error-dialog {
+  background: var(--white);
+  border-radius: var(--border-radius);
+  width: 90%;
+  max-width: 450px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+  animation: scaleIn 0.4s var(--ease-in-out);
+  overflow: hidden;
+}
+
+.auth-error-header {
+  background: var(--secondary-color);
+  color: var(--text-color);
+  padding: 1.2rem;
+  display: flex;
+  align-items: center;
+  border-bottom: 1px solid #eee;
+}
+
+.auth-error-header i {
+  color: var(--primary-color);
+  font-size: 1.5rem;
+  margin-right: 0.8rem;
+}
+
+.auth-error-header h3 {
+  margin: 0;
+  font-size: 1.3rem;
+  font-weight: 600;
+}
+
+.auth-error-body {
+  padding: 1.5rem;
+  color: var(--text-color);
+}
+
+.auth-error-body p {
+  margin: 0 0 1rem;
+  line-height: 1.5;
+}
+
+.auth-error-footer {
+  display: flex;
+  justify-content: flex-end;
+  padding: 1rem 1.5rem;
+  background: #f9f9f9;
+  gap: 1rem;
+}
+
+.auth-error-footer .btn-secondary {
+  padding: 0.7rem 1.5rem;
+}
+
+.auth-error-footer .btn-primary {
+  background: var(--primary-color);
+  color: white;
+  padding: 0.7rem 1.5rem;
+  border-radius: 30px;
+  text-decoration: none;
+  font-weight: 500;
+  box-shadow: 0 4px 10px rgba(255, 158, 68, 0.3);
+  transition: var(--transition);
+  display: inline-block;
+}
+
+.auth-error-footer .btn-primary:hover {
+  background: #FF8C2B;
+  transform: translateY(-3px);
+  box-shadow: 0 6px 15px rgba(255, 158, 68, 0.4);
 }
 
 /* Responsive Styles */
