@@ -4,21 +4,14 @@ document.addEventListener('DOMContentLoaded', function() {
     let currentPage = 1;
     let allRecords = [];
     
-    // Function to get URL parameters
-    function getQueryParam(param) {
-        const urlParams = new URLSearchParams(window.location.search);
-        return urlParams.get(param);
-    }
-    
-    // Get user_id from URL parameter
-    const userId = getQueryParam('user_id');
-
     // Function to fetch medical history
     async function fetchMedicalHistory() {
         try {
-            const response = await fetch(`/api/medical-history?user_id=${userId}`);
+            // Remove URL parameter dependency - use the authenticated user from session
+            const response = await fetch('/api/medical-history');
             
             if (!response.ok) {
+                // If 401 Unauthorized, the user will be redirected by the fetch interceptor
                 throw new Error('Failed to fetch medical history');
             }
             
@@ -121,20 +114,11 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
     
-    // Initialize
-    if (userId) {
-        fetchMedicalHistory();
-    } else {
-        document.getElementById('history-table-body').innerHTML = `
-            <tr>
-                <td colspan="6" class="text-center">User ID is required to view medical history.</td>
-            </tr>
-        `;
-    }
+    // Initialize - No need to check for URL parameters anymore
+    fetchMedicalHistory();
     
     // Apply navbar scroll effect - modified to ensure proper positioning
     const navbar = document.querySelector(".navbar");
-    // We don't need to set position:fixed as it's already in style.css
     
     window.addEventListener("scroll", function() {
         navbar.classList.toggle("scrolled", window.scrollY > 20);

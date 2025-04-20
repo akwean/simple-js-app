@@ -343,6 +343,54 @@ body {
     }
 }
 
+/* User dropdown styling */
+.user-dropdown .nav-link {
+  display: flex;
+  align-items: center;
+  color: var(--text-color) !important;
+  font-weight: 500;
+}
+
+.user-dropdown .dropdown-toggle::after {
+  margin-left: 0.5rem;
+}
+
+.user-dropdown .dropdown-menu {
+  border-radius: var(--border-radius);
+  box-shadow: var(--box-shadow);
+  border: none;
+  min-width: 200px;
+  margin-top: 0.5rem;
+  animation: fadeIn 0.3s var(--ease-in-out);
+}
+
+.user-dropdown .dropdown-item {
+  padding: 0.7rem 1rem;
+  color: var(--text-color);
+  transition: var(--transition);
+}
+
+.user-dropdown .dropdown-item:hover {
+  background-color: var(--secondary-color);
+}
+
+.user-dropdown .dropdown-item i {
+  width: 20px;
+  text-align: center;
+}
+
+.user-dropdown .dropdown-item-text {
+  padding: 0.5rem 1rem;
+}
+
+.user-dropdown .logout-btn {
+  color: #dc3545;
+}
+
+.user-dropdown .logout-btn:hover {
+  background-color: #f8d7da;
+}
+
 /* Hero Section - Improved Layout */
 .hero-section {
     min-height: 100vh;

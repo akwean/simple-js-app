@@ -215,6 +215,28 @@ form .button input:disabled {
   color: #FF8C2B;
 }
 
+/* Back to home link */
+.back-link {
+  position: absolute;
+  top: 20px;
+  left: 20px;
+  color: var(--text-color);
+  text-decoration: none;
+  font-size: 0.9rem;
+  display: flex;
+  align-items: center;
+  transition: var(--transition);
+}
+
+.back-link i {
+  margin-right: 5px;
+}
+
+.back-link:hover {
+  color: var(--primary-color);
+  transform: translateX(-3px);
+}
+
 /* Animations */
 @keyframes fadeIn {
   from { opacity: 0; transform: translateY(20px); }

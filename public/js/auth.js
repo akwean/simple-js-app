@@ -1,5 +1,27 @@
 // Auth utility functions
 
+// Intercept fetch responses to handle authentication errors
+const originalFetch = window.fetch;
+window.fetch = async function(...args) {
+    const response = await originalFetch(...args);
+    
+    // If it's an API request and returns 401 Unauthorized
+    if (response.status === 401 && args[0].toString().includes('/api/')) {
+        console.log('Authentication required. Redirecting to login page.');
+        
+        // Save the current URL to redirect back after login
+        const currentPage = window.location.pathname + window.location.search;
+        if (currentPage !== '/login.html') {
+            sessionStorage.setItem('loginRedirect', currentPage);
+        }
+        
+        // Redirect to login page
+        window.location.href = '/login.html';
+    }
+    
+    return response;
+};
+
 // Check if user is logged in
 async function checkAuth() {
   try {

@@ -474,12 +474,9 @@ app.put('/api/appointments/:id/reject', (req, res) => {
 });
 
 // Updated API route to fetch medical history from the database
-app.get('/api/medical-history', (req, res) => {
-    const userId = req.query.user_id; // Get user_id from query params
-
-    if (!userId) {
-        return res.status(400).json({ error: 'User ID is required' });
-    }
+app.get('/api/medical-history', isAuthenticated, (req, res) => {
+    // Use the authenticated user's ID from session instead of query parameter
+    const userId = req.session.userId;
 
     const query = `
         SELECT 
