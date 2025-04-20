@@ -1,0 +1,208 @@
+/* Importing Google Fonts - Poppins */
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@200;300;400;500;600;700&display=swap');
+
+/* CSS Variables to match main website */
+:root {
+  --primary-color: #FF9E44;
+  --secondary-color: #FAEBD7;
+  --text-color: #333;
+  --light-text: #555;
+  --light-bg: #FFF5EE;
+  --white: #FFFAFA;
+  --border-radius: 10px;
+  --box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+  --transition: all 0.3s ease;
+  --ease-in-out: cubic-bezier(0.645, 0.045, 0.355, 1);
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  font-family: 'Poppins', sans-serif;
+}
+
+body {
+  height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 10px;
+  background: linear-gradient(135deg, #FFF5EE, #FFFFF0);
+}
+
+.container {
+  max-width: 500px;
+  width: 100%;
+  background-color: var(--white);
+  padding: 30px;
+  border-radius: var(--border-radius);
+  box-shadow: var(--box-shadow);
+  animation: fadeIn 0.8s var(--ease-in-out) forwards;
+}
+
+.container .title {
+  font-size: 28px;
+  font-weight: 600;
+  position: relative;
+  color: var(--text-color);
+  margin-bottom: 5px;
+}
+
+.container .title::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  height: 3px;
+  width: 30px;
+  border-radius: 5px;
+  background: var(--primary-color);
+}
+
+.container p {
+  color: var(--light-text);
+  font-size: 15px;
+  margin-top: 5px;
+  margin-bottom: 20px;
+}
+
+.content form .user-details {
+  display: flex;
+  flex-direction: column;
+}
+
+form .user-details .input-box {
+  margin-bottom: 20px;
+  width: 100%;
+}
+
+form .input-box span.details {
+  display: block;
+  font-weight: 500;
+  margin-bottom: 8px;
+  color: var(--text-color);
+}
+
+.user-details .input-box input {
+  height: 45px;
+  width: 100%;
+  outline: none;
+  font-size: 16px;
+  border-radius: var(--border-radius);
+  padding-left: 15px;
+  border: 1px solid #ddd;
+  border-bottom-width: 2px;
+  transition: var(--transition);
+}
+
+.user-details .input-box input:focus,
+.user-details .input-box input:valid {
+  border-color: var(--primary-color);
+}
+
+/* Remember me and forgot password */
+.remember-forgot {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.remember-me {
+  display: flex;
+  align-items: center;
+}
+
+.remember-me input {
+  margin-right: 5px;
+  accent-color: var(--primary-color);
+}
+
+.remember-me label {
+  color: var(--light-text);
+  font-size: 14px;
+}
+
+.forgot-password {
+  color: var(--primary-color);
+  text-decoration: none;
+  font-size: 14px;
+  font-weight: 500;
+  transition: var(--transition);
+}
+
+.forgot-password:hover {
+  text-decoration: underline;
+  color: #FF8C2B;
+}
+
+form .button {
+  height: 45px;
+  margin: 20px 0;
+}
+
+form .button input {
+  height: 100%;
+  width: 100%;
+  border-radius: 30px;
+  border: none;
+  color: #fff;
+  font-size: 18px;
+  font-weight: 500;
+  letter-spacing: 1px;
+  cursor: pointer;
+  transition: var(--transition);
+  background: var(--primary-color);
+  box-shadow: 0 4px 10px rgba(255, 158, 68, 0.3);
+}
+
+form .button input:hover {
+  background: #FF8C2B;
+  transform: translateY(-3px);
+  box-shadow: 0 6px 15px rgba(255, 158, 68, 0.4);
+}
+
+/* Register link */
+.register-link {
+  text-align: center;
+  margin-top: 15px;
+  color: var(--light-text);
+  font-size: 15px;
+}
+
+.register-link a {
+  color: var(--primary-color);
+  text-decoration: none;
+  font-weight: 500;
+  transition: var(--transition);
+}
+
+.register-link a:hover {
+  text-decoration: underline;
+  color: #FF8C2B;
+}
+
+/* Animations */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Responsive media query code for mobile devices */
+@media(max-width: 584px) {
+  .container {
+    max-width: 100%;
+    padding: 25px 20px;
+  }
+
+  .remember-forgot {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+  }
+
+  .container .title {
+    font-size: 24px;
+  }
+}
