@@ -110,20 +110,25 @@
           userType: result.user_type
         }));
         
-        // Check for redirect after login
-        const redirectUrl = sessionStorage.getItem('loginRedirect');
-        if (redirectUrl) {
-          sessionStorage.removeItem('loginRedirect'); // Clear after use
-          window.location.href = redirectUrl;
-        } else {
-          // Redirect based on user type
+        // Modified redirect logic - staff users always go to nurse dashboard
+        if (result.user_type === 'staff') {
+          // Staff users should always go to nurse dashboard regardless of redirect parameter
           setTimeout(() => {
-            if (result.user_type === 'staff') {
-              window.location.href = 'nurse-dashboard.html';
-            } else {
-              window.location.href = 'index.html';
-            }
+            window.location.href = 'nurse-dashboard.html';
           }, 1500);
+        } else {
+          // Regular users follow the redirect if available
+          const redirectUrl = sessionStorage.getItem('loginRedirect');
+          if (redirectUrl && !redirectUrl.includes('nurse-dashboard')) {
+            // Only follow redirect if it's not to the nurse dashboard
+            sessionStorage.removeItem('loginRedirect'); // Clear after use
+            window.location.href = redirectUrl;
+          } else {
+            // Default for regular users
+            setTimeout(() => {
+              window.location.href = 'index.html';
+            }, 1500);
+          }
         }
         
       } catch (error) {

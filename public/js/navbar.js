@@ -16,34 +16,58 @@ document.addEventListener('DOMContentLoaded', function() {
   const userDropdownContainer = document.createElement('li');
   userDropdownContainer.className = 'nav-item dropdown user-dropdown';
   
+  // Check if we're on the nurse dashboard
+  const isNurseDashboard = window.location.pathname.includes('nurse-dashboard');
+  
   if (user) {
     // User is logged in - show user dropdown with logout
     if (signInBtn) {
       // Create dropdown toggle
-      userDropdownContainer.innerHTML = `
-        <a class="nav-link dropdown-toggle" href="#" id="userDropdown" role="button" 
-           data-bs-toggle="dropdown" aria-expanded="false">
-          <i class="fas fa-user-circle me-1"></i>
-          <span>${user.name}</span>
-        </a>
-        <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown">
-          <li><span class="dropdown-item-text">
-            <small class="text-muted">${user.email}</small>
-          </span></li>
-          <li><hr class="dropdown-divider"></li>
-          <li><a class="dropdown-item" href="History.html?user_id=${user.id}">
-            <i class="fas fa-history me-2"></i>Medical History
-          </a></li>
-          ${user.userType === 'staff' ? 
-            `<li><a class="dropdown-item" href="nurse-dashboard.html">
-              <i class="fas fa-stethoscope me-2"></i>Nurse Dashboard
-            </a></li>` : ''}
-          <li><hr class="dropdown-divider"></li>
-          <li><a class="dropdown-item logout-btn" href="#" id="logoutBtn">
-            <i class="fas fa-sign-out-alt me-2"></i>Logout
-          </a></li>
-        </ul>
-      `;
+      if (isNurseDashboard && user.userType === 'staff') {
+        // Simplified dropdown for nurse dashboard - only logout
+        userDropdownContainer.innerHTML = `
+          <a class="nav-link dropdown-toggle" href="#" id="userDropdown" role="button" 
+             data-bs-toggle="dropdown" aria-expanded="false">
+            <i class="fas fa-user-circle me-1"></i>
+            <span>${user.name} (Staff)</span>
+          </a>
+          <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown">
+            <li><span class="dropdown-item-text">
+              <small class="text-muted">${user.email}</small>
+            </span></li>
+            <li><hr class="dropdown-divider"></li>
+            <li><a class="dropdown-item logout-btn" href="#" id="logoutBtn">
+              <i class="fas fa-sign-out-alt me-2"></i>Logout
+            </a></li>
+          </ul>
+        `;
+      } else {
+        // Regular dropdown with all links for other pages
+        userDropdownContainer.innerHTML = `
+          <a class="nav-link dropdown-toggle" href="#" id="userDropdown" role="button" 
+             data-bs-toggle="dropdown" aria-expanded="false">
+            <i class="fas fa-user-circle me-1"></i>
+            <span>${user.name}</span>
+          </a>
+          <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown">
+            <li><span class="dropdown-item-text">
+              <small class="text-muted">${user.email}</small>
+            </span></li>
+            <li><hr class="dropdown-divider"></li>
+            <li><a class="dropdown-item" href="History.html?user_id=${user.id}">
+              <i class="fas fa-history me-2"></i>Medical History
+            </a></li>
+            ${user.userType === 'staff' ? 
+              `<li><a class="dropdown-item" href="nurse-dashboard.html">
+                <i class="fas fa-stethoscope me-2"></i>Nurse Dashboard
+              </a></li>` : ''}
+            <li><hr class="dropdown-divider"></li>
+            <li><a class="dropdown-item logout-btn" href="#" id="logoutBtn">
+              <i class="fas fa-sign-out-alt me-2"></i>Logout
+            </a></li>
+          </ul>
+        `;
+      }
       
       // Replace sign in button with user dropdown
       signInBtn.parentNode.replaceWith(userDropdownContainer);

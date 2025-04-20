@@ -56,6 +56,25 @@ function isStaff(req, res, next) {
   res.redirect('/');
 }
 
+// Student authorization middleware
+function isStudent(req, res, next) {
+  if (req.session.userType === 'student') {
+    return next();
+  }
+  
+  // For API requests, return JSON error
+  if (req.path.startsWith('/api/')) {
+    return res.status(403).json({ 
+      error: 'Access denied',
+      message: 'This feature is only available to students',
+      redirectUrl: '/nurse-dashboard.html'
+    });
+  }
+  
+  // For page requests, redirect to nurse dashboard
+  res.redirect('/nurse-dashboard.html');
+}
+
 // Route for the homepage
 app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
@@ -64,6 +83,11 @@ app.get('/', (req, res) => {
 // Route for staff dashboard - protected
 app.get('/nurse-dashboard', isAuthenticated, isStaff, (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'nurse-dashboard.html'));
+});
+
+// Route for appointment booking - only for students
+app.get('/appointments.html', isAuthenticated, isStudent, (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'appointments.html'));
 });
 
 // Login endpoint
@@ -208,7 +232,7 @@ app.get('/api/user/me', isAuthenticated, (req, res) => {
 });
 
 // Protected appointment routes
-app.post('/api/appointments', isAuthenticated, (req, res) => {
+app.post('/api/appointments', isAuthenticated, isStudent, (req, res) => {
   // Generate a unique request ID to track duplicates
   const requestId = Date.now() + '-' + Math.random().toString(36).substr(2, 9);
   console.log(`Processing appointment request ${requestId}`);

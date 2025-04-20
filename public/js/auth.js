@@ -61,6 +61,23 @@ async function checkStaffAuth() {
   return true;
 }
 
+// Check if user is student
+async function checkStudentAuth() {
+  const user = await checkAuth();
+  
+  if (!user) {
+    return false;
+  }
+  
+  if (user.user_type !== 'student') {
+    // If not student, redirect to nurse dashboard
+    window.location.href = '/nurse-dashboard.html';
+    return false;
+  }
+  
+  return true;
+}
+
 // Logout function
 async function logout() {
   try {
@@ -167,9 +184,37 @@ function restoreAppointmentData(data) {
   // Your code to navigate to the confirmation step
 }
 
+// Add protection on pages meant only for students
+function protectStudentPages() {
+  // Pages that should only be accessed by students, not by staff
+  const studentOnlyPages = [
+    '/appointments.html'
+  ];
+  
+  const currentPage = window.location.pathname;
+  
+  // Check if this is a student-only page
+  if (studentOnlyPages.some(page => currentPage.endsWith(page))) {
+    const userString = localStorage.getItem('user');
+    
+    if (userString) {
+      try {
+        const user = JSON.parse(userString);
+        if (user.userType === 'staff') {
+          // Staff is trying to access a student page, redirect to dashboard
+          window.location.href = '/nurse-dashboard.html';
+        }
+      } catch (e) {
+        console.error('Error parsing user data:', e);
+      }
+    }
+  }
+}
+
 // Call this when DOM is loaded
 document.addEventListener('DOMContentLoaded', function() {
   updateAuthUI();
+  protectStudentPages();
   
   if (window.location.pathname.includes('appointments.html')) {
     checkAuthForBooking();

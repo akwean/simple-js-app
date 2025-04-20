@@ -264,5 +264,23 @@
 <script src="js/index.js"></script>
 <script src="js/navbar.js"></script>
 
+<!-- Add script to redirect staff users if they somehow get to index.html -->
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    const userString = localStorage.getItem('user');
+    if (userString) {
+      try {
+        const user = JSON.parse(userString);
+        if (user.userType === 'staff') {
+          // If a staff user somehow gets to index.html, redirect to nurse dashboard
+          window.location.href = 'nurse-dashboard.html';
+        }
+      } catch (e) {
+        console.error('Error parsing user data:', e);
+      }
+    }
+  });
+</script>
+
 </body>
 </html>
