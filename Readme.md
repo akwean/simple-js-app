@@ -104,6 +104,209 @@ A basic Express.js application that serves a "Hello World" style response.
    npm install mysql2
    ```
 
+## Setting Up Staff Accounts
+
+### Prerequisites
+
+Before creating a staff account, ensure you have the following installed:
+
+1. **Node.js and npm**
+   ```bash
+   # Check if Node.js is installed
+   node -v
+   
+   # Check if npm is installed
+   npm -v
+   
+   # If not installed, install them
+   sudo apt update
+   sudo apt install nodejs npm
+   ```
+
+2. **Required Node.js Dependencies**
+   ```bash
+   # Navigate to the project directory
+   cd /home/cj-ubuntu/simple-js-app
+   
+   # Install required packages
+   npm install bcrypt readline
+   ```
+
+### Creating a Staff Account (Interactive Method)
+
+1. **Create a staff-creator.js file**
+   ```bash
+   # Create the file in your project directory
+   touch staff-creator.js
+   ```
+
+2. **Open the file and paste the provided code**
+   ```bash
+   # Use your preferred text editor
+   nano staff-creator.js
+   ```
+
+   Add the following code to the file:
+   ```javascript
+   /**
+    * Interactive Staff Account Creator
+    * Run with: node staff-creator.js
+    */
+
+   const bcrypt = require('bcrypt');
+   const readline = require('readline');
+   const db = require('./db');
+
+   // Create readline interface
+   const rl = readline.createInterface({
+     input: process.stdin,
+     output: process.stdout
+   });
+
+   // Prompt for staff details
+   function promptStaffDetails() {
+     console.log('\n===== BUPC Clinic Staff Account Creation =====\n');
+     
+     rl.question('First Name: ', (firstName) => {
+       rl.question('Last Name: ', (lastName) => {
+         rl.question('Email: ', (email) => {
+           rl.question('Phone Number: ', (phone) => {
+             rl.question('Password: ', async (password) => {
+               try {
+                 // Hash the password
+                 const hashedPassword = await bcrypt.hash(password, 10);
+                 
+                 // Check if email exists
+                 db.query('SELECT user_id FROM Users WHERE email = ?', [email], (err, results) => {
+                   if (err) {
+                     console.error('Error checking email:', err);
+                     closeAndExit();
+                     return;
+                   }
+                   
+                   if (results.length > 0) {
+                     console.log('\nEmail already exists. Update password? (y/n)');
+                     rl.question('> ', (answer) => {
+                       if (answer.toLowerCase() === 'y') {
+                         updatePassword(email, hashedPassword);
+                       } else {
+                         console.log('Operation cancelled.');
+                         closeAndExit();
+                       }
+                     });
+                     return;
+                   }
+                   
+                   // Create new staff user
+                   createStaffUser(firstName, lastName, email, phone, hashedPassword);
+                 });
+               } catch (error) {
+                 console.error('Error hashing password:', error);
+                 closeAndExit();
+               }
+             });
+           });
+         });
+       });
+     });
+   }
+
+   // Create staff user function
+   function createStaffUser(firstName, lastName, email, phone, hashedPassword) {
+     db.query(
+       'INSERT INTO Users (first_name, last_name, email, phone_number, password, user_type) VALUES (?, ?, ?, ?, ?, "staff")',
+       [firstName, lastName, email, phone, hashedPassword],
+       (err, result) => {
+         if (err) {
+           console.error('Error creating staff account:', err);
+         } else {
+           console.log('\n✅ Staff account created successfully!');
+           console.log(`User ID: ${result.insertId}`);
+           console.log(`Name: ${firstName} ${lastName}`);
+           console.log(`Email: ${email}`);
+         }
+         closeAndExit();
+       }
+     );
+   }
+
+   // Update password function
+   function updatePassword(email, hashedPassword) {
+     db.query(
+       'UPDATE Users SET password = ? WHERE email = ?',
+       [hashedPassword, email],
+       (err) => {
+         if (err) {
+           console.error('Error updating password:', err);
+         } else {
+           console.log(`\n✅ Password updated for ${email}`);
+         }
+         closeAndExit();
+       }
+     );
+   }
+
+   // Close connections and exit
+   function closeAndExit() {
+     rl.close();
+     db.end();
+   }
+
+   // Start the program
+   promptStaffDetails();
+   ```
+
+3. **Run the script to create a staff account**
+   ```bash
+   # Execute the script
+   node staff-creator.js
+   ```
+
+4. **Follow the interactive prompts**
+   - Enter the staff member's first name
+   - Enter the staff member's last name
+   - Enter a valid email address
+   - Enter a phone number
+   - Enter a secure password
+   
+   The script will:
+   - Hash the password securely
+   - Check if the email already exists
+   - Create a new staff account or update an existing one
+   - Provide confirmation of successful creation
+
+### Staff Account Privileges
+
+Staff accounts have the following special privileges:
+
+1. Access to the Nurse Dashboard (/nurse-dashboard)
+2. Ability to view all patient appointments
+3. Ability to approve or reject pending appointments
+4. Ability to manage appointment conflicts
+
+### Existing Test Accounts
+
+The system comes with a default staff account that you can update:
+
+- **Staff User**: Jane Smith
+- **Email**: jane.smith@example.com
+- You can use the staff-creator.js script to set a password for this account
+
+### Alternative Methods
+
+You can also use one of these simpler methods:
+
+1. **Direct SQL Update** (simplest):
+   ```sql
+   UPDATE Users 
+   SET password = '$2b$10$3n9xBfbTQ0zXcEjrKPT.yOXn9H3QI3JvAWm6AXK4Dv25Wx4c8jnI2' 
+   WHERE email = 'jane.smith@example.com';
+   ```
+   This sets the password to "staffpass123" for the existing Jane Smith account.
+
+2. **Using a Simple Node.js Script**:
+   Create a file named create-staff.js with basic functionality to create a staff account with hardcoded values.
+
 ## Development
 
 You can add a start script to package.json for easier running:
