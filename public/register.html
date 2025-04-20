@@ -13,9 +13,10 @@
     <!-- Title section -->
     <div class="title">BUPC Clinic Registration</div>
     <p>Create your account to access clinic services</p>
+    <div id="alert-container"></div>
     <div class="content">
       <!-- Registration form -->
-      <form action="#">
+      <form id="registerForm">
         <div class="user-details">
           <!-- Input for First Name -->
           <div class="input-box">
@@ -59,5 +60,83 @@
       </form>
     </div>
   </div>
+
+  <script>
+    document.getElementById('registerForm').addEventListener('submit', async function(e) {
+      e.preventDefault();
+      
+      // Get form data
+      const formData = new FormData(this);
+      const password = formData.get('password');
+      const confirmPassword = formData.get('confirm_password');
+      
+      // Check if passwords match
+      if (password !== confirmPassword) {
+        showAlert('Passwords do not match', 'error');
+        return;
+      }
+      
+      // Create data object for submission
+      const data = {
+        first_name: formData.get('first_name'),
+        last_name: formData.get('last_name'),
+        email: formData.get('email'),
+        phone_number: formData.get('phone_number'),
+        password: password,
+        user_type: 'student' // Default value
+      };
+      
+      try {
+        // Submit to the server
+        const response = await fetch('/api/register', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(data)
+        });
+        
+        const result = await response.json();
+        
+        if (!response.ok) {
+          showAlert(result.error || 'Registration failed', 'error');
+          return;
+        }
+        
+        // Registration successful
+        showAlert('Registration successful! Redirecting to login...', 'success');
+        
+        // Redirect to login page after 2 seconds
+        setTimeout(() => {
+          window.location.href = 'login.html';
+        }, 2000);
+        
+      } catch (error) {
+        showAlert('An error occurred. Please try again later.', 'error');
+        console.error('Error:', error);
+      }
+    });
+    
+    // Function to show alerts
+    function showAlert(message, type) {
+      const alertContainer = document.getElementById('alert-container');
+      
+      // Create alert element
+      const alert = document.createElement('div');
+      alert.className = `alert alert-${type}`;
+      alert.textContent = message;
+      
+      // Clear previous alerts
+      alertContainer.innerHTML = '';
+      
+      // Add new alert
+      alertContainer.appendChild(alert);
+      
+      // Remove alert after 5 seconds
+      setTimeout(() => {
+        alert.remove();
+      }, 5000);
+    }
+  </script>
 </body>
 </html>

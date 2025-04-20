@@ -4,6 +4,10 @@ const db = require('./db'); // Use the existing db.js file for database connecti
 const app = express();
 const port = 3000;
 
+// Add bcrypt for password hashing
+const bcrypt = require('bcrypt');
+const saltRounds = 10;
+
 app.use(express.json());
 
 // Serve static files from the 'public' directory
@@ -313,6 +317,63 @@ app.get('/api/medical-history', (req, res) => {
         
         res.json(results);
     });
+});
+
+// Route for user registration
+app.post('/api/register', async (req, res) => {
+  try {
+    const { first_name, last_name, email, phone_number, password, user_type = 'student' } = req.body;
+    
+    // Validate required fields
+    if (!first_name || !last_name || !email || !password) {
+      return res.status(400).json({ error: 'Missing required fields' });
+    }
+    
+    // Check if email already exists
+    const checkEmailQuery = 'SELECT user_id FROM Users WHERE email = ?';
+    db.query(checkEmailQuery, [email], async (checkErr, checkResult) => {
+      if (checkErr) {
+        console.error('Error checking email:', checkErr);
+        return res.status(500).json({ error: 'Database error' });
+      }
+      
+      if (checkResult.length > 0) {
+        return res.status(409).json({ error: 'Email already registered' });
+      }
+      
+      // Hash the password
+      const hashedPassword = await bcrypt.hash(password, saltRounds);
+      
+      // Insert new user
+      const insertQuery = `
+        INSERT INTO Users (first_name, last_name, email, phone_number, password, user_type)
+        VALUES (?, ?, ?, ?, ?, ?)
+      `;
+      
+      db.query(
+        insertQuery, 
+        [first_name, last_name, email, phone_number, hashedPassword, user_type], 
+        (insertErr, insertResult) => {
+          if (insertErr) {
+            console.error('Error registering user:', insertErr);
+            return res.status(500).json({ error: 'Database error' });
+          }
+          
+          // Return success but don't include password
+          res.status(201).json({ 
+            message: 'Registration successful',
+            user_id: insertResult.insertId,
+            first_name,
+            last_name,
+            email
+          });
+        }
+      );
+    });
+  } catch (error) {
+    console.error('Server error during registration:', error);
+    res.status(500).json({ error: 'Server error' });
+  }
 });
 
 app.listen(port, () => {
