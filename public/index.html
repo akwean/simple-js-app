@@ -264,20 +264,29 @@
 <script src="js/index.js"></script>
 <script src="js/navbar.js"></script>
 
-<!-- Add script to redirect staff users if they somehow get to index.html -->
+<!-- Fix redirect logic to prevent automatic nurse dashboard redirects -->
 <script>
-  document.addEventListener('DOMContentLoaded', function() {
-    const userString = localStorage.getItem('user');
-    if (userString) {
-      try {
-        const user = JSON.parse(userString);
-        if (user.userType === 'staff') {
-          // If a staff user somehow gets to index.html, redirect to nurse dashboard
+  document.addEventListener('DOMContentLoaded', async function() {
+    // First, make sure we have a real authenticated session before redirecting
+    try {
+      const response = await fetch('/api/user/me');
+      
+      // Only redirect if the user is actually authenticated
+      if (response.ok) {
+        const userData = await response.json();
+        
+        // Only redirect if user is staff type
+        if (userData.user_type === 'staff') {
           window.location.href = 'nurse-dashboard.html';
         }
-      } catch (e) {
-        console.error('Error parsing user data:', e);
+      } else {
+        // If not authenticated, clear any stale user data from localStorage
+        localStorage.removeItem('user');
       }
+    } catch (error) {
+      console.error('Error checking authentication:', error);
+      // On error, don't redirect and clear potentially stale data
+      localStorage.removeItem('user');
     }
   });
 </script>
