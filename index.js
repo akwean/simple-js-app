@@ -75,6 +75,42 @@ function isStudent(req, res, next) {
   res.redirect('/nurse-dashboard.html');
 }
 
+// Middleware to check if profile is completed
+function profileCompleted(req, res, next) {
+  if (!req.session.userId) {
+    return res.status(401).json({ error: 'Authentication required' });
+  }
+
+  const query = 'SELECT profile_completed FROM Users WHERE user_id = ?';
+  
+  db.query(query, [req.session.userId], (err, results) => {
+    if (err) {
+      console.error('Error checking profile completion:', err);
+      return res.status(500).json({ error: 'Database error' });
+    }
+    
+    if (results.length === 0) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+    
+    if (!results[0].profile_completed) {
+      // For API requests, return JSON
+      if (req.path.startsWith('/api/')) {
+        return res.status(403).json({ 
+          error: 'Profile not completed',
+          message: 'Please complete your profile before proceeding',
+          profileUrl: '/profile.html'
+        });
+      }
+      
+      // For page requests, redirect to profile page
+      return res.redirect('/profile.html');
+    }
+    
+    next();
+  });
+}
+
 // Route for the homepage
 app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
@@ -211,7 +247,8 @@ app.post('/api/register', async (req, res) => {
             user_id: insertResult.insertId,
             first_name,
             last_name,
-            email
+            email,
+            redirect: '/profile.html' // Add this to tell front-end to redirect to profile page
           });
         }
       );
@@ -231,8 +268,159 @@ app.get('/api/user/me', isAuthenticated, (req, res) => {
   });
 });
 
+// Profile routes
+app.get('/api/profile/status', isAuthenticated, (req, res) => {
+  const query = 'SELECT profile_completed FROM Users WHERE user_id = ?';
+  
+  db.query(query, [req.session.userId], (err, results) => {
+    if (err) {
+      console.error('Error checking profile status:', err);
+      return res.status(500).json({ error: 'Database error' });
+    }
+    
+    if (results.length === 0) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+    
+    res.json({ profileCompleted: results[0].profile_completed });
+  });
+});
+
+app.post('/api/profile', isAuthenticated, (req, res) => {
+  const userId = req.session.userId;
+  const {
+    dateOfBirth, gender, address, city, province, postalCode,
+    bloodType, height, weight, allergies, medicalConditions,
+    hasInsurance, insuranceProvider, insurancePolicyNumber,
+    emergencyContactName, emergencyContactPhone, emergencyContactRelationship,
+    guardianName, guardianContact, guardianRelationship
+  } = req.body;
+  
+  // Validate required fields
+  if (!dateOfBirth || !gender || !address || !city || !province || !postalCode ||
+      !emergencyContactName || !emergencyContactPhone || !emergencyContactRelationship) {
+    return res.status(400).json({ error: 'Required fields are missing' });
+  }
+  
+  // Begin transaction
+  db.beginTransaction(err => {
+    if (err) {
+      console.error('Error starting transaction:', err);
+      return res.status(500).json({ error: 'Database error' });
+    }
+    
+    // Check if profile already exists for this user
+    db.query('SELECT profile_id FROM Profiles WHERE user_id = ?', [userId], (err, results) => {
+      if (err) {
+        return db.rollback(() => {
+          console.error('Error checking existing profile:', err);
+          res.status(500).json({ error: 'Database error' });
+        });
+      }
+      
+      let query;
+      let params;
+      
+      if (results.length > 0) {
+        // Update existing profile
+        query = `
+          UPDATE Profiles SET
+            date_of_birth = ?,
+            gender = ?,
+            blood_type = ?,
+            height = ?,
+            weight = ?,
+            address = ?,
+            city = ?,
+            province = ?,
+            postal_code = ?,
+            emergency_contact_name = ?,
+            emergency_contact_phone = ?,
+            emergency_contact_relationship = ?,
+            has_insurance = ?,
+            insurance_provider = ?,
+            insurance_policy_number = ?,
+            known_allergies = ?,
+            medical_conditions = ?,
+            guardian_name = ?,
+            guardian_contact = ?,
+            guardian_relationship = ?,
+            profile_completed = TRUE,
+            updated_at = CURRENT_TIMESTAMP
+          WHERE user_id = ?
+        `;
+        
+        params = [
+          dateOfBirth, gender, bloodType, height, weight,
+          address, city, province, postalCode,
+          emergencyContactName, emergencyContactPhone, emergencyContactRelationship,
+          hasInsurance, insuranceProvider, insurancePolicyNumber,
+          allergies, medicalConditions,
+          guardianName, guardianContact, guardianRelationship,
+          userId
+        ];
+      } else {
+        // Insert new profile
+        query = `
+          INSERT INTO Profiles (
+            user_id, date_of_birth, gender, blood_type, height, weight,
+            address, city, province, postal_code,
+            emergency_contact_name, emergency_contact_phone, emergency_contact_relationship,
+            has_insurance, insurance_provider, insurance_policy_number,
+            known_allergies, medical_conditions,
+            guardian_name, guardian_contact, guardian_relationship
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        `;
+        
+        params = [
+          userId, dateOfBirth, gender, bloodType, height, weight,
+          address, city, province, postalCode,
+          emergencyContactName, emergencyContactPhone, emergencyContactRelationship,
+          hasInsurance, insuranceProvider, insurancePolicyNumber,
+          allergies, medicalConditions,
+          guardianName, guardianContact, guardianRelationship
+        ];
+      }
+      
+      db.query(query, params, (err) => {
+        if (err) {
+          return db.rollback(() => {
+            console.error('Error saving profile:', err);
+            res.status(500).json({ error: 'Database error' });
+          });
+        }
+        
+        // Update user record to indicate profile is completed
+        db.query('UPDATE Users SET profile_completed = TRUE WHERE user_id = ?', [userId], (err) => {
+          if (err) {
+            return db.rollback(() => {
+              console.error('Error updating user profile status:', err);
+              res.status(500).json({ error: 'Database error' });
+            });
+          }
+          
+          // Commit transaction
+          db.commit(err => {
+            if (err) {
+              return db.rollback(() => {
+                console.error('Error committing transaction:', err);
+                res.status(500).json({ error: 'Database error' });
+              });
+            }
+            
+            // Update session
+            req.session.profileCompleted = true;
+            
+            res.json({ success: true, message: 'Profile completed successfully' });
+          });
+        });
+      });
+    });
+  });
+});
+
 // Protected appointment routes
-app.post('/api/appointments', isAuthenticated, isStudent, (req, res) => {
+app.post('/api/appointments', isAuthenticated, isStudent, profileCompleted, (req, res) => {
   // Generate a unique request ID to track duplicates
   const requestId = Date.now() + '-' + Math.random().toString(36).substr(2, 9);
   console.log(`Processing appointment request ${requestId}`);

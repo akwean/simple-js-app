@@ -184,6 +184,22 @@ function restoreAppointmentData(data) {
   // Your code to navigate to the confirmation step
 }
 
+// Add a new function to check profile completion
+async function checkProfileCompletion() {
+  try {
+    const response = await fetch('/api/profile/status');
+    if (!response.ok) {
+      throw new Error('Failed to check profile status');
+    }
+    
+    const data = await response.json();
+    return data.profileCompleted;
+  } catch (error) {
+    console.error('Error checking profile completion:', error);
+    return false;
+  }
+}
+
 // Add protection on pages meant only for students
 function protectStudentPages() {
   // Pages that should only be accessed by students, not by staff
@@ -191,22 +207,40 @@ function protectStudentPages() {
     '/appointments.html'
   ];
   
+  // Pages that require profile completion (except profile page itself)
+  const requiresProfilePages = [
+    '/appointments.html',
+    '/History.html'
+  ];
+  
   const currentPage = window.location.pathname;
   
-  // Check if this is a student-only page
-  if (studentOnlyPages.some(page => currentPage.endsWith(page))) {
-    const userString = localStorage.getItem('user');
-    
-    if (userString) {
-      try {
-        const user = JSON.parse(userString);
-        if (user.userType === 'staff') {
-          // Staff is trying to access a student page, redirect to dashboard
-          window.location.href = '/nurse-dashboard.html';
-        }
-      } catch (e) {
-        console.error('Error parsing user data:', e);
+  // Check if user is logged in
+  const userString = localStorage.getItem('user');
+  
+  if (userString) {
+    try {
+      const user = JSON.parse(userString);
+      
+      // If user is staff and trying to access student page, redirect
+      if (user.userType === 'staff' && studentOnlyPages.some(page => currentPage.endsWith(page))) {
+        window.location.href = '/nurse-dashboard.html';
+        return;
       }
+      
+      // If profile not completed and page requires profile, redirect to profile page
+      if (!user.profileCompleted && 
+          !currentPage.endsWith('/profile.html') && 
+          requiresProfilePages.some(page => currentPage.endsWith(page))) {
+        // Double-check with server if profile is completed
+        checkProfileCompletion().then(profileCompleted => {
+          if (!profileCompleted) {
+            window.location.href = '/profile.html';
+          }
+        });
+      }
+    } catch (e) {
+      console.error('Error parsing user data:', e);
     }
   }
 }

@@ -107,27 +107,36 @@
           id: result.user_id,
           name: result.name,
           email: result.email,
-          userType: result.user_type
+          userType: result.user_type,
+          profileCompleted: result.profile_completed // Make sure to include this
         }));
         
-        // Modified redirect logic - staff users always go to nurse dashboard
+        // Modified redirect logic based on profile completion
         if (result.user_type === 'staff') {
-          // Staff users should always go to nurse dashboard regardless of redirect parameter
+          // Staff users should always go to nurse dashboard regardless of profile status
           setTimeout(() => {
             window.location.href = 'nurse-dashboard.html';
           }, 1500);
         } else {
-          // Regular users follow the redirect if available
-          const redirectUrl = sessionStorage.getItem('loginRedirect');
-          if (redirectUrl && !redirectUrl.includes('nurse-dashboard')) {
-            // Only follow redirect if it's not to the nurse dashboard
-            sessionStorage.removeItem('loginRedirect'); // Clear after use
-            window.location.href = redirectUrl;
-          } else {
-            // Default for regular users
+          // Check if profile is completed
+          if (!result.profile_completed) {
+            // Redirect to profile page if profile is not completed
             setTimeout(() => {
-              window.location.href = 'index.html';
+              window.location.href = 'profile.html';
             }, 1500);
+          } else {
+            // Regular users follow the redirect if available and profile is completed
+            const redirectUrl = sessionStorage.getItem('loginRedirect');
+            if (redirectUrl && !redirectUrl.includes('nurse-dashboard')) {
+              // Only follow redirect if it's not to the nurse dashboard
+              sessionStorage.removeItem('loginRedirect'); // Clear after use
+              window.location.href = redirectUrl;
+            } else {
+              // Default for regular users
+              setTimeout(() => {
+                window.location.href = 'index.html';
+              }, 1500);
+            }
           }
         }
         
