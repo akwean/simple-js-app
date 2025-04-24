@@ -734,7 +734,23 @@ app.get('/api/medical-history', isAuthenticated, (req, res) => {
     });
 });
 
-app.listen(port, () => {
-  console.log(`Server listening on port ${port}`);
-  console.log(`Visit http://localhost:${port} in your browser`);
-});
+// Server startup function that handles port conflicts
+const startServer = (port) => {
+  const server = app.listen(port, () => {
+    console.log(`Server running on port ${port}`);
+    console.log(`Visit http://localhost:${port} in your browser`);
+  });
+
+  server.on('error', (e) => {
+    if (e.code === 'EADDRINUSE') {
+      console.log(`Port ${port} is busy, trying ${port + 1}...`);
+      server.close();
+      startServer(port + 1);
+    } else {
+      console.error('Server error:', e);
+    }
+  });
+};
+
+const PORT = process.env.PORT || 3000;
+startServer(PORT);
