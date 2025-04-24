@@ -27,19 +27,41 @@ async function checkAuth() {
   try {
     const response = await fetch('/api/user/me');
     
-    if (!response.ok) {
-      // If not authenticated, redirect to login
-      window.location.href = '/login.html';
+    // If the server responds with unauthorized, clear localStorage and redirect
+    if (response.status === 401) {
+      localStorage.removeItem('user');
+      if (!window.location.pathname.includes('/login.html')) {
+        sessionStorage.setItem('loginRedirect', window.location.pathname);
+        window.location.href = '/login.html';
+      }
       return null;
     }
     
-    // Get user data from session
-    const userData = await response.json();
-    return userData;
+    if (!response.ok) {
+      throw new Error('Failed to validate session');
+    }
     
+    // Session is valid - get the user data from server
+    const userData = await response.json();
+    
+    // Update localStorage with the latest data from server
+    localStorage.setItem('user', JSON.stringify({
+      id: userData.user_id,
+      name: userData.name,
+      email: userData.email || '', // Server might not return email
+      userType: userData.user_type,
+      profileCompleted: userData.profile_completed
+    }));
+    
+    return userData;
   } catch (error) {
     console.error('Auth check error:', error);
-    window.location.href = '/login.html';
+    // On any error, clear localStorage and redirect if needed
+    localStorage.removeItem('user');
+    if (!window.location.pathname.includes('/login.html')) {
+      sessionStorage.setItem('loginRedirect', window.location.pathname);
+      window.location.href = '/login.html';
+    }
     return null;
   }
 }

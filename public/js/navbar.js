@@ -1,26 +1,56 @@
-document.addEventListener('DOMContentLoaded', function() {
-  // Get user info from localStorage
-  const userString = localStorage.getItem('user');
-  let user = null;
-  
+document.addEventListener('DOMContentLoaded', async function() {
+  // Validate session with server before using localStorage data
   try {
-    user = userString ? JSON.parse(userString) : null;
-  } catch (e) {
-    console.error('Error parsing user data:', e);
-    // Clear invalid user data
+    // Check session validity first
+    const response = await fetch('/api/user/me');
+    
+    if (response.status === 401) {
+      // Session is invalid - clear localStorage
+      localStorage.removeItem('user');
+      setupGuestNavbar();
+      return;
+    }
+    
+    // Get user info from localStorage only if session is valid
+    const userString = localStorage.getItem('user');
+    let user = null;
+    
+    try {
+      user = userString ? JSON.parse(userString) : null;
+    } catch (e) {
+      console.error('Error parsing user data:', e);
+      localStorage.removeItem('user');
+    }
+    
+    // Select navbar elements
+    const signInBtn = document.querySelector('.nav-item .btn-signin');
+    const userDropdownContainer = document.createElement('li');
+    userDropdownContainer.className = 'nav-item dropdown user-dropdown';
+    
+    // Check if we're on the nurse dashboard
+    const isNurseDashboard = window.location.pathname.includes('nurse-dashboard');
+    
+    if (user) {
+      // User is logged in - show user dropdown with logout
+      setupUserNavbar(user, signInBtn, userDropdownContainer, isNurseDashboard);
+    } else {
+      // No user data - show default guest navbar
+      setupGuestNavbar();
+    }
+  } catch (error) {
+    console.error('Error validating session:', error);
+    // On error, clear localStorage and show guest navbar
     localStorage.removeItem('user');
+    setupGuestNavbar();
   }
   
-  // Select navbar elements
-  const signInBtn = document.querySelector('.nav-item .btn-signin');
-  const userDropdownContainer = document.createElement('li');
-  userDropdownContainer.className = 'nav-item dropdown user-dropdown';
+  // Function to set up navbar for guests
+  function setupGuestNavbar() {
+    // Keep the sign-in button as is, no changes needed
+  }
   
-  // Check if we're on the nurse dashboard
-  const isNurseDashboard = window.location.pathname.includes('nurse-dashboard');
-  
-  if (user) {
-    // User is logged in - show user dropdown with logout
+  // Function to set up navbar for logged-in users
+  function setupUserNavbar(user, signInBtn, userDropdownContainer, isNurseDashboard) {
     if (signInBtn) {
       // Create dropdown toggle
       if (isNurseDashboard && user.userType === 'staff') {
@@ -69,34 +99,11 @@ document.addEventListener('DOMContentLoaded', function() {
         `;
       }
       
-      // Replace sign in button with user dropdown
+      // Replace sign-in button with user dropdown
       signInBtn.parentNode.replaceWith(userDropdownContainer);
       
       // Add logout functionality
-      document.getElementById('logoutBtn').addEventListener('click', async function(e) {
-        e.preventDefault();
-        await logout();
-      });
-    }
-  } else {
-    // User is not logged in - ensure sign in button is visible
-    if (!signInBtn) {
-      // If sign in button doesn't exist but should, we could add it here
-      const navbarNav = document.querySelector('.navbar-nav');
-      if (navbarNav) {
-        const signInItem = document.createElement('li');
-        signInItem.className = 'nav-item';
-        signInItem.innerHTML = `
-          <a href="login.html" class="btn-signin btn-3d">
-            Sign In
-            <div class="stars"></div>
-            <div class="sparkle-1"></div>
-            <div class="sparkle-2"></div>
-            <div class="sparkle-3"></div>
-          </a>
-        `;
-        navbarNav.appendChild(signInItem);
-      }
+      document.getElementById('logoutBtn').addEventListener('click', logout);
     }
   }
 });
@@ -106,16 +113,21 @@ async function logout() {
   try {
     const response = await fetch('/api/logout');
     
+    // Clear local storage regardless of server response
+    localStorage.removeItem('user');
+    
     if (response.ok) {
-      // Clear user data from localStorage
-      localStorage.removeItem('user');
-      
       // Redirect to home page
       window.location.href = 'index.html';
     } else {
-      console.error('Logout failed');
+      console.error('Logout failed, but local data cleared');
+      // Redirect anyway
+      window.location.href = 'index.html';
     }
   } catch (error) {
     console.error('Error during logout:', error);
+    // Still clear localStorage and redirect on error
+    localStorage.removeItem('user');
+    window.location.href = 'index.html';
   }
 }

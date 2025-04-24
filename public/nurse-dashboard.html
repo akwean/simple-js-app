@@ -14,10 +14,39 @@
     <script>
       // Immediately check if user is staff, redirect if not
       document.addEventListener('DOMContentLoaded', async () => {
-        const isStaff = await checkStaffAuth();
-        if (!isStaff) {
-          // If not staff, the checkStaffAuth function will already redirect
-          console.log('Access denied: Staff only');
+        try {
+          // First check session validity
+          const response = await fetch('/api/user/me');
+          
+          if (response.status === 401) {
+            // Session invalid - clear localStorage and redirect
+            localStorage.removeItem('user');
+            window.location.href = '/login.html?redirect=nurse-dashboard.html';
+            return;
+          }
+          
+          // Session is valid, check if user is staff
+          const userData = await response.json();
+          
+          if (userData.user_type !== 'staff') {
+            // Not staff, redirect to home
+            window.location.href = '/index.html';
+            return;
+          }
+          
+          // Update localStorage with fresh data
+          localStorage.setItem('user', JSON.stringify({
+            id: userData.user_id,
+            name: userData.name,
+            email: userData.email,
+            userType: userData.user_type,
+            profileCompleted: userData.profile_completed
+          }));
+          
+        } catch (error) {
+          console.error('Error validating session:', error);
+          localStorage.removeItem('user');
+          window.location.href = '/login.html?redirect=nurse-dashboard.html';
         }
       });
     </script>

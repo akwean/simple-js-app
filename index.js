@@ -16,7 +16,7 @@ app.use(session({
   resave: false,
   saveUninitialized: false,
   cookie: { 
-    secure: false, // Set to true if using HTTPS
+    secure: false, // Keep as false for local development
     maxAge: 24 * 60 * 60 * 1000 // 24 hours
   }
 }));
@@ -134,7 +134,7 @@ app.post('/api/login', (req, res) => {
     return res.status(400).json({ error: 'Email and password required' });
   }
   
-  const query = 'SELECT user_id, first_name, last_name, email, password, user_type FROM Users WHERE email = ?';
+  const query = 'SELECT user_id, first_name, last_name, email, password, user_type, profile_completed FROM Users WHERE email = ?';
   
   db.query(query, [email], async (err, results) => {
     if (err) {
@@ -160,7 +160,8 @@ app.post('/api/login', (req, res) => {
           user_id: user.user_id,
           name: `${user.first_name} ${user.last_name}`,
           email: user.email,
-          user_type: user.user_type
+          user_type: user.user_type,
+          profile_completed: user.profile_completed
         });
       }
       
@@ -181,7 +182,8 @@ app.post('/api/login', (req, res) => {
         user_id: user.user_id,
         name: `${user.first_name} ${user.last_name}`,
         email: user.email,
-        user_type: user.user_type
+        user_type: user.user_type,
+        profile_completed: user.profile_completed
       });
       
     } catch (error) {
@@ -197,6 +199,7 @@ app.get('/api/logout', (req, res) => {
     if (err) {
       return res.status(500).json({ error: 'Could not log out' });
     }
+    res.clearCookie('connect.sid'); // Clear the session cookie
     res.json({ message: 'Logged out successfully' });
   });
 });
@@ -261,10 +264,28 @@ app.post('/api/register', async (req, res) => {
 
 // Get session user info
 app.get('/api/user/me', isAuthenticated, (req, res) => {
-  res.json({
-    user_id: req.session.userId,
-    name: req.session.userName,
-    user_type: req.session.userType
+  // Query to get user data including profile completion status
+  const query = 'SELECT user_id, first_name, last_name, email, user_type, profile_completed FROM Users WHERE user_id = ?';
+  
+  db.query(query, [req.session.userId], (err, results) => {
+    if (err) {
+      console.error('Error fetching user data:', err);
+      return res.status(500).json({ error: 'Database error' });
+    }
+    
+    if (results.length === 0) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+    
+    const user = results[0];
+    
+    res.json({
+      user_id: user.user_id,
+      name: `${user.first_name} ${user.last_name}`,
+      email: user.email,
+      user_type: user.user_type,
+      profile_completed: !!user.profile_completed // Ensure boolean
+    });
   });
 });
 
@@ -318,13 +339,12 @@ app.post('/api/profile', isAuthenticated, (req, res) => {
         });
       }
       
-      let query;
-      let params;
-      
+      let query, params;
       if (results.length > 0) {
         // Update existing profile
         query = `
-          UPDATE Profiles SET
+          UPDATE Profiles
+          SET 
             date_of_birth = ?,
             gender = ?,
             blood_type = ?,
@@ -410,7 +430,6 @@ app.post('/api/profile', isAuthenticated, (req, res) => {
             
             // Update session
             req.session.profileCompleted = true;
-            
             res.json({ success: true, message: 'Profile completed successfully' });
           });
         });
@@ -458,37 +477,37 @@ app.post('/api/appointments', isAuthenticated, isStudent, profileCompleted, (req
       if (period === 'AM' && hourNum === 12) hourNum = 0;
       formattedTime = `${hourNum.toString().padStart(2, '0')}:${minutes}:00`;
     }
-
+    
     console.log(`[${requestId}] Checking availability for date: ${formattedDate} and time: ${formattedTime}`);
-
+    
     // Check for existing appointments with the same date and time
     const checkQuery = `
       SELECT appointment_id, status FROM Appointments 
       WHERE appointment_date = ? AND appointment_time = ? AND status IN ('confirmed')
     `;
-
+    
     db.query(checkQuery, [formattedDate, formattedTime], (checkErr, checkResult) => {
       if (checkErr) {
         console.error(`[${requestId}] Error checking slot availability:`, checkErr);
         return res.status(500).json({ error: 'Database error', message: checkErr.message });
       }
-
+      
       console.log(`[${requestId}] Check result:`, checkResult); // Debug log
       
       if (checkResult && checkResult.length > 0) {
         console.log(`[${requestId}] Time slot already booked - returning 409 conflict`);
         return res.status(409).json({ 
           error: 'Time slot already booked',
-          message: 'This time slot is already taken. Please select a different time.' 
+          message: 'This time slot is already taken. Please select a different time.'
         });
       }
-
+      
       // Insert the appointment
       const insertQuery = `
         INSERT INTO Appointments (user_id, service_id, appointment_date, appointment_time, status, additional_notes)
         VALUES (?, (SELECT service_id FROM Services WHERE service_name = ?), ?, ?, 'pending', ?)
       `;
-
+      
       db.query(insertQuery, [userId, service, formattedDate, formattedTime, notes || ''], (insertErr, insertResult) => {
         if (insertErr) {
           console.error(`[${requestId}] Error inserting appointment:`, insertErr);
@@ -503,7 +522,7 @@ app.post('/api/appointments', isAuthenticated, isStudent, profileCompleted, (req
           
           return res.status(500).json({ error: 'Database error', message: insertErr.message });
         }
-
+        
         const appointmentId = insertResult.insertId;
         const confirmationCode = `BUPC-${new Date().getFullYear()}-${appointmentId}`;
         
@@ -563,13 +582,13 @@ app.get('/api/time-slots', (req, res) => {
     WHERE appointment_date = ? 
     AND status = 'confirmed'  /* Only consider confirmed appointments */
   `;
-
+  
   db.query(query, [date], (err, results) => {
     if (err) {
       console.error('Error fetching time slots:', err);
       return res.status(500).json({ error: 'Database error' });
     }
-
+    
     console.log('Found appointments:', results); // Debug log
 
     // Define all possible time slots
@@ -577,7 +596,7 @@ app.get('/api/time-slots', (req, res) => {
       '8:00 AM', '9:00 AM', '10:00 AM', '11:00 AM',
       '1:00 PM', '2:00 PM', '3:00 PM', '4:00 PM'
     ];
-
+    
     // Extract booked time slots
     const bookedSlots = results.map(row => row.time);
 
@@ -609,7 +628,6 @@ app.get('/api/appointments', (req, res) => {
         LEFT JOIN AppointmentConfirmations ac ON a.appointment_id = ac.appointment_id
         ORDER BY a.appointment_date DESC, a.appointment_time DESC
     `;
-
     db.query(query, (err, results) => {
         if (err) {
             console.error(err);
@@ -626,10 +644,10 @@ app.put('/api/appointments/:id/approve', (req, res) => {
   // Query to get the date and time of the appointment being approved
   const getAppointmentQuery = `
     SELECT appointment_date, appointment_time 
-    FROM Appointments 
+    FROM Appointments
     WHERE appointment_id = ?
   `;
-
+  
   db.query(getAppointmentQuery, [id], (getErr, getResult) => {
     if (getErr) {
       console.error('Error fetching appointment details:', getErr);
@@ -652,14 +670,14 @@ app.put('/api/appointments/:id/approve', (req, res) => {
 
       // Automatically reject conflicting appointments
       const rejectConflictsQuery = `
-        UPDATE Appointments 
+        UPDATE Appointments
         SET status = 'cancelled' 
         WHERE appointment_date = ? 
           AND appointment_time = ? 
           AND appointment_id != ? 
           AND status = 'pending'
       `;
-
+      
       db.query(rejectConflictsQuery, [appointment_date, appointment_time, id], (rejectErr) => {
         if (rejectErr) {
           console.error('Error rejecting conflicting appointments:', rejectErr);
