@@ -438,6 +438,34 @@ app.post('/api/profile', isAuthenticated, (req, res) => {
   });
 });
 
+// Profile GET endpoint
+app.get('/api/profile', isAuthenticated, (req, res) => {
+  const userId = req.session.userId; // Ensure the user is authenticated and their ID is in the session
+
+  const query = `
+    SELECT 
+      date_of_birth, gender, address, city, province, postal_code, 
+      blood_type, height, weight, known_allergies, medical_conditions, 
+      emergency_contact_name, emergency_contact_phone, emergency_contact_relationship, 
+      guardian_name, guardian_contact, guardian_relationship
+    FROM Profiles
+    WHERE user_id = ?
+  `;
+
+  db.query(query, [userId], (err, results) => {
+    if (err) {
+      console.error('Error fetching profile:', err);
+      return res.status(500).json({ error: 'Database error' });
+    }
+
+    if (results.length === 0) {
+      return res.status(404).json({ error: 'Profile not found' });
+    }
+
+    res.json(results[0]); // Return the profile data
+  });
+});
+
 // Protected appointment routes
 app.post('/api/appointments', isAuthenticated, isStudent, profileCompleted, (req, res) => {
   // Generate a unique request ID to track duplicates

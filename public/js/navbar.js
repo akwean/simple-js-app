@@ -84,7 +84,10 @@ document.addEventListener('DOMContentLoaded', async function() {
               <small class="text-muted">${user.email}</small>
             </span></li>
             <li><hr class="dropdown-divider"></li>
-            <li><a class="dropdown-item" href="History.html?user_id=${user.id}">
+            <li><a class="dropdown-item" href="profile-view.html">
+              <i class="fas fa-user-edit me-2"></i>Profile
+            </a></li>
+            <li><a class="dropdown-item" href="History.html">
               <i class="fas fa-history me-2"></i>Medical History
             </a></li>
             ${user.userType === 'staff' ? 
