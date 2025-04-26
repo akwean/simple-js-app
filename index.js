@@ -466,6 +466,39 @@ app.get('/api/profile', isAuthenticated, (req, res) => {
   });
 });
 
+// Get user profile by ID
+app.get('/api/profile/:user_id', isAuthenticated, (req, res) => {
+  const userId = req.params.user_id;
+  
+  // If no userId provided or invalid
+  if (!userId || userId === 'null' || userId === 'undefined') {
+    return res.status(400).json({ error: 'Invalid user ID' });
+  }
+  
+  const query = `
+    SELECT 
+      date_of_birth, gender, address, city, province, postal_code,
+      blood_type, height, weight, known_allergies, medical_conditions,
+      emergency_contact_name, emergency_contact_phone, emergency_contact_relationship,
+      guardian_name, guardian_contact, guardian_relationship
+    FROM Profiles
+    WHERE user_id = ?
+  `;
+  
+  db.query(query, [userId], (err, results) => {
+    if (err) {
+      console.error('Error fetching user profile:', err);
+      return res.status(500).json({ error: 'Database error' });
+    }
+    
+    if (results.length === 0) {
+      return res.status(404).json({ error: 'Profile not found' });
+    }
+    
+    res.json(results[0]);
+  });
+});
+
 // Protected appointment routes
 app.post('/api/appointments', isAuthenticated, isStudent, profileCompleted, (req, res) => {
   // Generate a unique request ID to track duplicates
@@ -636,15 +669,16 @@ app.get('/api/time-slots', (req, res) => {
   });
 });
 
-app.get('/api/appointments', (req, res) => {
+app.get('/api/appointments', isAuthenticated, (req, res) => {
     const query = `
         SELECT 
             a.appointment_id AS id,
+            a.user_id, -- Ensure user_id is included
             CONCAT(u.first_name, ' ', u.last_name) AS patient,
             a.appointment_date AS date,
             a.appointment_time AS time,
             ac.confirmation_code,
-            s.service_name AS service, -- Ensure service_name is included
+            s.service_name AS service,
             CASE 
                 WHEN a.status = 'confirmed' THEN 'approved'
                 WHEN a.status = 'cancelled' THEN 'canceled'
@@ -652,13 +686,13 @@ app.get('/api/appointments', (req, res) => {
             END AS status
         FROM Appointments a
         JOIN Users u ON a.user_id = u.user_id
-        JOIN Services s ON a.service_id = s.service_id -- Join with Services table
+        JOIN Services s ON a.service_id = s.service_id
         LEFT JOIN AppointmentConfirmations ac ON a.appointment_id = ac.appointment_id
         ORDER BY a.appointment_date DESC, a.appointment_time DESC
     `;
     db.query(query, (err, results) => {
         if (err) {
-            console.error(err);
+            console.error('Error fetching appointments:', err);
             return res.status(500).json({ error: 'Database error' });
         }
         res.json(results);
@@ -760,6 +794,57 @@ app.get('/api/medical-history', isAuthenticated, (req, res) => {
         
         res.json(results);
     });
+});
+
+// Get user details by ID
+app.get('/api/users/:id', isAuthenticated, (req, res) => {
+  const userId = req.params.id;
+
+  if (!userId || userId === 'null') {
+    return res.status(400).json({ error: 'Invalid user ID' });
+  }
+
+  const query = 'SELECT user_id, first_name, last_name, email, phone_number FROM Users WHERE user_id = ?';
+
+  db.query(query, [userId], (err, results) => {
+    if (err) {
+      console.error('Error fetching user:', err);
+      return res.status(500).json({ error: 'Database error' });
+    }
+    
+    if (results.length === 0) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+    
+    res.json(results[0]);
+  });
+});
+
+// Get appointment details by ID
+app.get('/api/appointments/:id', isAuthenticated, (req, res) => {
+  const appointmentId = req.params.id;
+  
+  const query = `
+    SELECT a.appointment_id as id, a.appointment_date as date, 
+           a.appointment_time as time, a.status, a.additional_notes as notes, 
+           s.service_name as service, a.user_id
+    FROM Appointments a
+    JOIN Services s ON a.service_id = s.service_id
+    WHERE a.appointment_id = ?
+  `;
+  
+  db.query(query, [appointmentId], (err, results) => {
+    if (err) {
+      console.error('Error fetching appointment:', err);
+      return res.status(500).json({ error: 'Database error' });
+    }
+    
+    if (results.length === 0) {
+      return res.status(404).json({ error: 'Appointment not found' });
+    }
+    
+    res.json(results[0]);
+  });
 });
 
 // Server startup function that handles port conflicts
