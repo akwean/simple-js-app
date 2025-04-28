@@ -65,6 +65,67 @@ async function sendEmail(mailOptions) {
   }
 }
 
+// Function to send appointment email with detailed content
+async function sendAppointmentEmail(email, appointmentDetails, status, nurseNotes = null) {
+  const { date, time, service, confirmationCode } = appointmentDetails;
+
+  let subject, htmlContent;
+
+  if (status === 'pending') {
+    subject = 'Appointment Booking Confirmation';
+    htmlContent = `
+      <h1>Appointment Booking Confirmation</h1>
+      <p>Thank you for booking an appointment with BUPC Clinic. Here are the details of your appointment:</p>
+      <ul>
+        <li><strong>Date:</strong> ${date}</li>
+        <li><strong>Time:</strong> ${time}</li>
+        <li><strong>Service:</strong> ${service}</li>
+        <li><strong>Status:</strong> Pending (awaiting nurse approval)</li>
+        <li><strong>Confirmation Code:</strong> ${confirmationCode}</li>
+      </ul>
+      <p>You will be notified once the nurse reviews your appointment.</p>
+    `;
+  } else if (status === 'approved') {
+    subject = 'Appointment Approved';
+    htmlContent = `
+      <h1>Appointment Approved</h1>
+      <p>Your appointment has been approved. Please find the details below:</p>
+      <ul>
+        <li><strong>Date:</strong> ${date}</li>
+        <li><strong>Time:</strong> ${time}</li>
+        <li><strong>Service:</strong> ${service}</li>
+        <li><strong>Status:</strong> Approved</li>
+        <li><strong>Confirmation Code:</strong> ${confirmationCode}</li>
+      </ul>
+      <p>Please arrive at least 15 minutes early and bring your ID for verification.</p>
+    `;
+  } else if (status === 'rejected') {
+    subject = 'Appointment Rejected';
+    htmlContent = `
+      <h1>Appointment Rejected</h1>
+      <p>Unfortunately, your appointment has been rejected. Here are the details:</p>
+      <ul>
+        <li><strong>Date:</strong> ${date}</li>
+        <li><strong>Time:</strong> ${time}</li>
+        <li><strong>Service:</strong> ${service}</li>
+        <li><strong>Status:</strong> Rejected</li>
+        <li><strong>Confirmation Code:</strong> ${confirmationCode}</li>
+      </ul>
+      <p><strong>Reason for Rejection:</strong> ${nurseNotes || 'No reason provided.'}</p>
+      <p>You may book another appointment or contact the clinic for further assistance.</p>
+    `;
+  }
+
+  const mailOptions = {
+    from: `"${process.env.EMAIL_FROM_NAME}" <${process.env.EMAIL_USER}>`,
+    to: email,
+    subject,
+    html: htmlContent,
+  };
+
+  return sendEmail(mailOptions);
+}
+
 // Middleware
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
@@ -775,17 +836,20 @@ app.get('/api/appointments', isAuthenticated, (req, res) => {
     });
 });
 
-// New endpoint to approve an appointment
+// Updated endpoint to approve an appointment
 app.put('/api/appointments/:id/approve', (req, res) => {
   const { id } = req.params;
 
-  // Query to get the date and time of the appointment being approved
   const getAppointmentQuery = `
-    SELECT appointment_date, appointment_time 
-    FROM Appointments
-    WHERE appointment_id = ?
+    SELECT a.appointment_date AS date, a.appointment_time AS time, 
+           s.service_name AS service, ac.confirmation_code, u.email
+    FROM Appointments a
+    JOIN Services s ON a.service_id = s.service_id
+    LEFT JOIN AppointmentConfirmations ac ON a.appointment_id = ac.appointment_id
+    JOIN Users u ON a.user_id = u.user_id
+    WHERE a.appointment_id = ?
   `;
-  
+
   db.query(getAppointmentQuery, [id], (getErr, getResult) => {
     if (getErr) {
       console.error('Error fetching appointment details:', getErr);
@@ -796,48 +860,77 @@ app.put('/api/appointments/:id/approve', (req, res) => {
       return res.status(404).json({ error: 'Appointment not found' });
     }
 
-    const { appointment_date, appointment_time } = getResult[0];
+    const appointmentDetails = getResult[0];
 
-    // Approve the selected appointment
     const approveQuery = `UPDATE Appointments SET status = 'confirmed' WHERE appointment_id = ?`;
-    db.query(approveQuery, [id], (approveErr) => {
+    db.query(approveQuery, [id], async (approveErr) => {
       if (approveErr) {
         console.error('Error approving appointment:', approveErr);
         return res.status(500).json({ error: 'Database error' });
       }
 
-      // Automatically reject conflicting appointments
-      const rejectConflictsQuery = `
-        UPDATE Appointments
-        SET status = 'cancelled' 
-        WHERE appointment_date = ? 
-          AND appointment_time = ? 
-          AND appointment_id != ? 
-          AND status = 'pending'
-      `;
-      
-      db.query(rejectConflictsQuery, [appointment_date, appointment_time, id], (rejectErr) => {
-        if (rejectErr) {
-          console.error('Error rejecting conflicting appointments:', rejectErr);
-          return res.status(500).json({ error: 'Database error' });
-        }
-
-        res.json({ success: true, message: 'Appointment approved and conflicts rejected' });
-      });
+      try {
+        await sendAppointmentEmail(
+          appointmentDetails.email,
+          appointmentDetails,
+          'approved'
+        );
+        res.json({ success: true, message: 'Appointment approved and email sent' });
+      } catch (emailErr) {
+        console.error('Error sending approval email:', emailErr);
+        res.status(500).json({ error: 'Appointment approved but failed to send email' });
+      }
     });
   });
 });
 
-// New endpoint to reject an appointment
+// Updated endpoint to reject an appointment
 app.put('/api/appointments/:id/reject', (req, res) => {
   const { id } = req.params;
-  const updateQuery = `UPDATE Appointments SET status = 'cancelled' WHERE appointment_id = ?`;
-  db.query(updateQuery, [id], (err, result) => {
-    if (err) {
-      console.error('Error rejecting appointment:', err);
+  const { nurseNotes } = req.body;
+
+  const getAppointmentQuery = `
+    SELECT a.appointment_date AS date, a.appointment_time AS time, 
+           s.service_name AS service, ac.confirmation_code, u.email
+    FROM Appointments a
+    JOIN Services s ON a.service_id = s.service_id
+    LEFT JOIN AppointmentConfirmations ac ON a.appointment_id = ac.appointment_id
+    JOIN Users u ON a.user_id = u.user_id
+    WHERE a.appointment_id = ?
+  `;
+
+  db.query(getAppointmentQuery, [id], (getErr, getResult) => {
+    if (getErr) {
+      console.error('Error fetching appointment details:', getErr);
       return res.status(500).json({ error: 'Database error' });
     }
-    res.json({ success: true, message: 'Appointment rejected' });
+
+    if (getResult.length === 0) {
+      return res.status(404).json({ error: 'Appointment not found' });
+    }
+
+    const appointmentDetails = getResult[0];
+
+    const rejectQuery = `UPDATE Appointments SET status = 'cancelled' WHERE appointment_id = ?`;
+    db.query(rejectQuery, [id], async (rejectErr) => {
+      if (rejectErr) {
+        console.error('Error rejecting appointment:', rejectErr);
+        return res.status(500).json({ error: 'Database error' });
+      }
+
+      try {
+        await sendAppointmentEmail(
+          appointmentDetails.email,
+          appointmentDetails,
+          'rejected',
+          nurseNotes
+        );
+        res.json({ success: true, message: 'Appointment rejected and email sent' });
+      } catch (emailErr) {
+        console.error('Error sending rejection email:', emailErr);
+        res.status(500).json({ error: 'Appointment rejected but failed to send email' });
+      }
+    });
   });
 });
 

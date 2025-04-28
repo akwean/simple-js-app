@@ -115,8 +115,22 @@ A basic Express.js application that serves a "Hello World" style response.
 
 2. Create a `.env` file in the root directory with the following variables:
    ```
-   EMAIL_USER=your-email@gmail.com
-   EMAIL_PASS=your-email-password
+# Database Configuration
+DB_HOST=localhost
+DB_USER=clinic_user
+DB_PASSWORD=password
+DB_NAME=bupc_clinic
+
+# Email Configuration
+EMAIL_USER=tiknumberone.1@gmail.com
+EMAIL_PASS=ifhg jbqx fofs jjay
+EMAIL_SERVICE=Gmail
+EMAIL_FROM_NAME=BUPC Clinic System
+EMAIL_FROM_ADDRESS=noreply@bupc-clinic.com
+
+# Server Configuration
+PORT=3000
+
    ```
 
 ### Forgot Password
