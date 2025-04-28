@@ -1,0 +1,162 @@
+/* Auth pages styles to match website's orange theme */
+:root {
+  --primary-color: #FF9E44; /* Orange - matching existing website */
+  --primary-light: #FFA862;
+  --primary-dark: #FF8C2B;
+  --text-color: #333;
+  --light-text: #555;
+  --light-bg: #FFF5EE;
+  --white: #FFFAFA;
+  --border-radius: 10px;
+  --box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+  --transition: all 0.3s ease;
+  --ease-in-out: cubic-bezier(0.645, 0.045, 0.355, 1);
+}
+
+.form-container {
+  max-width: 700px;
+  width: 100%;
+  background-color: #fff;
+  padding: 25px 30px;
+  border-radius: 10px;
+  box-shadow: 0 5px 10px rgba(0, 0, 0, 0.15);
+  margin: 50px auto;
+}
+
+.form-container .title {
+  font-size: 25px;
+  font-weight: 500;
+  position: relative;
+  margin-bottom: 30px;
+  color: var(--text-color);
+}
+
+.form-container .title::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  bottom: -5px;
+  height: 3px;
+  width: 30px;
+  border-radius: 5px;
+  background: var(--primary-color);
+}
+
+.form-container form .user-details {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  margin: 20px 0 12px 0;
+}
+
+form .user-details .input-box {
+  margin-bottom: 15px;
+  width: calc(100% - 20px);
+}
+
+form .input-box span.details {
+  display: block;
+  font-weight: 500;
+  margin-bottom: 5px;
+  color: var(--text-color);
+}
+
+.user-details .input-box input {
+  height: 45px;
+  width: 100%;
+  outline: none;
+  font-size: 16px;
+  border-radius: 5px;
+  padding-left: 15px;
+  border: 1px solid #ccc;
+  border-bottom-width: 2px;
+  transition: all 0.3s ease;
+}
+
+.user-details .input-box input:focus,
+.user-details .input-box input:valid {
+  border-color: var(--primary-color);
+}
+
+form .button {
+  height: 45px;
+  margin: 35px 0;
+}
+
+form .button input {
+  height: 100%;
+  width: 100%;
+  border-radius: 5px;
+  border: none;
+  color: #fff;
+  font-size: 18px;
+  font-weight: 500;
+  letter-spacing: 1px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  background: linear-gradient(135deg, var(--primary-light), var(--primary-color));
+}
+
+form .button input:hover {
+  background: linear-gradient(-135deg, var(--primary-light), var(--primary-dark));
+  transform: translateY(-3px);
+  box-shadow: 0 6px 15px rgba(255, 158, 68, 0.4);
+}
+
+.login-link, .register-link {
+  text-align: center;
+  margin-top: 10px;
+}
+
+.login-link a, .register-link a {
+  color: var(--primary-color);
+  text-decoration: none;
+}
+
+.login-link a:hover, .register-link a:hover {
+  text-decoration: underline;
+}
+
+.remember-forgot {
+  display: flex;
+  justify-content: space-between;
+  margin: 15px 0;
+  width: 100%;
+}
+
+.remember-me {
+  display: flex;
+  align-items: center;
+}
+
+.remember-me input {
+  margin-right: 5px;
+}
+
+.forgot-password {
+  color: var(--primary-color);
+  text-decoration: none;
+}
+
+.forgot-password:hover {
+  text-decoration: underline;
+}
+
+/* Responsive */
+@media(max-width: 584px) {
+  .form-container {
+    max-width: 100%;
+    margin: 20px 10px;
+  }
+  form .user-details .input-box {
+    margin-bottom: 15px;
+    width: 100%;
+  }
+  .form-container form .user-details {
+    max-height: 300px;
+    overflow-y: auto;
+  }
+  .user-details::-webkit-scrollbar {
+    width: 5px;
+  }
+}

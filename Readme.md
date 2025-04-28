@@ -104,6 +104,32 @@ A basic Express.js application that serves a "Hello World" style response.
    npm install mysql2
    ```
 
+## Email Functionality
+
+### Prerequisites
+
+1. Install the required dependencies:
+   ```bash
+   npm install nodemailer dotenv
+   ```
+
+2. Create a `.env` file in the root directory with the following variables:
+   ```
+   EMAIL_USER=your-email@gmail.com
+   EMAIL_PASS=your-email-password
+   ```
+
+### Forgot Password
+
+1. Users can request a password reset email.
+2. A secure token is generated and sent to the user's email.
+3. Users can reset their password using the token.
+
+### Email Notifications for Booking
+
+1. Users receive a confirmation email upon booking an appointment.
+2. Ensure the `EMAIL_USER` and `EMAIL_PASS` environment variables are set up correctly.
+
 ## Setting Up Staff Accounts
 
 ### Prerequisites

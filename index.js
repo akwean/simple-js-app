@@ -1,10 +1,69 @@
+// Load environment variables from .env file
+require('dotenv').config();
 const express = require('express');
 const path = require('path');
 const db = require('./db'); // Use the existing db.js file for database connection
 const bcrypt = require('bcrypt');
 const session = require('express-session');
+const nodemailer = require('nodemailer'); // Ensure nodemailer is installed
+const crypto = require('crypto'); // For generating secure tokens
 const app = express();
-const port = 3000;
+
+// Email configuration check
+const emailConfigured = process.env.EMAIL_USER && process.env.EMAIL_PASS;
+if (!emailConfigured) {
+  console.warn('⚠️ Email credentials not found in .env file. Email functionality will be disabled.');
+  console.warn('⚠️ Please set EMAIL_USER and EMAIL_PASS in your .env file.');
+}
+
+// Create email transporter with configuration check
+function createTransporter() {
+  if (!emailConfigured) {
+    return null;
+  }
+  
+  return nodemailer.createTransport({
+    service: process.env.EMAIL_SERVICE || 'Gmail',
+    auth: {
+      user: process.env.EMAIL_USER,
+      pass: process.env.EMAIL_PASS,
+    },
+  });
+}
+
+// Function to send emails with fallback for development
+async function sendEmail(mailOptions) {
+  const transporter = createTransporter();
+  
+  // Format the sender with display name and add reply-to
+  if (!mailOptions.from) {
+    mailOptions.from = `"${process.env.EMAIL_FROM_NAME}" <${process.env.EMAIL_USER}>`;
+    // Add reply-to if specified in env
+    if (process.env.EMAIL_FROM_ADDRESS) {
+      mailOptions.replyTo = process.env.EMAIL_FROM_ADDRESS;
+    }
+  }
+  
+  // If no transporter (email not configured), log the email content and return success
+  if (!transporter) {
+    console.log('📧 [DEV MODE] Email would have been sent:');
+    console.log(`📧 From: ${mailOptions.from}`);
+    console.log(`📧 To: ${mailOptions.to}`);
+    console.log(`📧 Subject: ${mailOptions.subject}`);
+    console.log(`📧 Content: ${mailOptions.text || mailOptions.html}`);
+    return { success: true, devMode: true };
+  }
+  
+  // Real email sending
+  try {
+    const info = await transporter.sendMail(mailOptions);
+    console.log(`📧 Email sent: ${info.messageId}`);
+    return { success: true, messageId: info.messageId };
+  } catch (error) {
+    console.error('Error sending email:', error);
+    throw error;
+  }
+}
 
 // Middleware
 app.use(express.json());
@@ -155,6 +214,7 @@ app.post('/api/login', (req, res) => {
         req.session.userId = user.user_id;
         req.session.userType = user.user_type;
         req.session.userName = `${user.first_name} ${user.last_name}`;
+        req.session.email = user.email;
         
         return res.json({
           user_id: user.user_id,
@@ -176,6 +236,7 @@ app.post('/api/login', (req, res) => {
       req.session.userId = user.user_id;
       req.session.userType = user.user_type;
       req.session.userName = `${user.first_name} ${user.last_name}`;
+      req.session.email = user.email;
       
       // Return user info (without password)
       res.json({
@@ -597,16 +658,31 @@ app.post('/api/appointments', isAuthenticated, isStudent, profileCompleted, (req
           if (confirmErr) {
             console.error(`[${requestId}] Error creating confirmation:`, confirmErr);
           }
-          
-          // Return success response
-          console.log(`[${requestId}] Appointment successfully booked with code ${confirmationCode}`);
-          res.status(200).json({ 
-            success: true,
-            confirmationCode,
-            appointmentDate: formattedDate, 
-            appointmentTime: time,
-            message: 'Appointment successfully booked!'
-          });
+
+          // Send email notification
+          const mailOptions = {
+              from: `"${process.env.EMAIL_FROM_NAME}" <${process.env.EMAIL_USER}>`,
+              to: req.session.email,
+              subject: 'Appointment Confirmation',
+              html: `<p>Your appointment has been confirmed for ${formattedDate} at ${time}.</p>`,
+          };
+
+          sendEmail(mailOptions)
+            .then(() => {
+              // Return success response
+              console.log(`[${requestId}] Appointment successfully booked with code ${confirmationCode}`);
+              res.status(200).json({ 
+                success: true,
+                confirmationCode,
+                appointmentDate: formattedDate, 
+                appointmentTime: time,
+                message: 'Appointment successfully booked and email sent!'
+              });
+            })
+            .catch((mailErr) => {
+              console.error(`[${requestId}] Error sending email:`, mailErr);
+              res.status(500).json({ error: 'Failed to send email' });
+            });
         });
       });
     });
@@ -847,22 +923,139 @@ app.get('/api/appointments/:id', isAuthenticated, (req, res) => {
   });
 });
 
+// Endpoint to request a password reset
+app.post('/api/forgot-password', async (req, res) => {
+    const { email } = req.body;
+    if (!email) return res.status(400).json({ error: 'Email is required' });
+
+    const token = crypto.randomBytes(32).toString('hex');
+    const expiration = new Date(Date.now() + 3600000); // Token valid for 1 hour
+
+    const updateQuery = `UPDATE Users SET reset_token = ?, reset_token_expiration = ? WHERE email = ?`;
+    db.query(updateQuery, [token, expiration, email], async (err, result) => {
+        if (err) {
+            console.error('Error updating reset token:', err);
+            return res.status(500).json({ error: 'Database error' });
+        }
+        if (result.affectedRows === 0) {
+            return res.status(404).json({ error: 'Email not found' });
+        }
+
+        try {
+            const resetLink = `${req.protocol}://${req.get('host')}/forgot-password.html?token=${token}`;
+            const mailOptions = {
+                from: `"${process.env.EMAIL_FROM_NAME}" <${process.env.EMAIL_USER}>`,
+                to: email,
+                subject: 'Password Reset Request',
+                html: `<p>Click <a href="${resetLink}">here</a> to reset your password. This link is valid for 1 hour.</p>`,
+            };
+
+            await sendEmail(mailOptions);
+            res.json({ success: true, message: 'Password reset email sent' });
+        } catch (mailErr) {
+            console.error('Error sending email:', mailErr);
+            
+            // Rollback token update if email fails
+            const rollbackQuery = `UPDATE Users SET reset_token = NULL, reset_token_expiration = NULL WHERE email = ?`;
+            db.query(rollbackQuery, [email], (rollbackErr) => {
+                if (rollbackErr) {
+                    console.error('Error rolling back token update:', rollbackErr);
+                }
+            });
+            
+            res.status(500).json({ 
+                error: 'Failed to send email', 
+                details: mailErr.message,
+                tip: 'Check your EMAIL_USER and EMAIL_PASS in .env file'
+            });
+        }
+    });
+});
+
+// Endpoint to reset the password
+app.post('/api/reset-password', async (req, res) => {
+    const { token, newPassword } = req.body;
+    if (!token || !newPassword) return res.status(400).json({ error: 'Invalid request' });
+
+    const query = `SELECT * FROM Users WHERE reset_token = ? AND reset_token_expiration > NOW()`;
+    db.query(query, [token], async (err, results) => {
+        if (err) {
+            console.error('Error fetching token:', err);
+            return res.status(500).json({ error: 'Database error' });
+        }
+        if (results.length === 0) {
+            return res.status(400).json({ error: 'Invalid or expired token' });
+        }
+
+        try {
+            // Use bcrypt for secure password hashing
+            const hashedPassword = await bcrypt.hash(newPassword, 10);
+            const updateQuery = `UPDATE Users SET password = ?, reset_token = NULL, reset_token_expiration = NULL WHERE reset_token = ?`;
+            
+            db.query(updateQuery, [hashedPassword, token], (updateErr) => {
+                if (updateErr) {
+                    console.error('Error updating password:', updateErr);
+                    return res.status(500).json({ error: 'Database error' });
+                }
+                res.json({ success: true, message: 'Password reset successfully' });
+            });
+        } catch (hashErr) {
+            console.error('Error hashing password:', hashErr);
+            res.status(500).json({ error: 'Server error' });
+        }
+    });
+});
+
+// Test email sending endpoint
+app.get('/api/test-email', async (req, res) => {
+    const recipient = req.query.email || 'test-recipient@example.com';
+    try {
+        const result = await sendEmail({
+            from: `"${process.env.EMAIL_FROM_NAME}" <${process.env.EMAIL_USER}>`,
+            to: recipient,
+            subject: 'Test Email from BUPC Clinic',
+            text: 'This is a test email from BUPC Clinic.',
+            html: '<h1>Test Email</h1><p>This is a test email from BUPC Clinic.</p>'
+        });
+        
+        if (result.devMode) {
+            res.json({ 
+                success: true, 
+                message: 'Email logged to console (development mode)',
+                note: 'EMAIL_USER and EMAIL_PASS not configured in .env file'
+            });
+        } else {
+            res.json({ 
+                success: true, 
+                message: `Test email sent successfully to ${recipient}!`,
+                messageId: result.messageId
+            });
+        }
+    } catch (error) {
+        res.status(500).json({ 
+            error: 'Failed to send test email', 
+            details: error.message,
+            tip: 'Check your EMAIL_USER and EMAIL_PASS in .env file'
+        });
+    }
+});
+
 // Server startup function that handles port conflicts
 const startServer = (port) => {
-  const server = app.listen(port, () => {
-    console.log(`Server running on port ${port}`);
-    console.log(`Visit http://localhost:${port} in your browser`);
-  });
+    const server = app.listen(port, () => {
+        console.log(`Server running on port ${port}`);
+        console.log(`Visit http://localhost:${port} in your browser`);
+    });
 
-  server.on('error', (e) => {
-    if (e.code === 'EADDRINUSE') {
-      console.log(`Port ${port} is busy, trying ${port + 1}...`);
-      server.close();
-      startServer(port + 1);
-    } else {
-      console.error('Server error:', e);
-    }
-  });
+    server.on('error', (e) => {
+        if (e.code === 'EADDRINUSE') {
+            console.log(`Port ${port} is busy, trying ${port + 1}...`);
+            server.close();
+            startServer(port + 1);
+        } else {
+            console.error('Server error:', e);
+        }
+    });
 };
 
 const PORT = process.env.PORT || 3000;
