@@ -332,7 +332,7 @@ document.addEventListener('DOMContentLoaded', function() {
                                 <span>${profileData.address || 'N/A'}</span>
                             </div>
                             <div class="profile-item">
-                                <label>City:</label>
+                                <label>City/Municipal:</label>
                                 <span>${profileData.city || 'N/A'}</span>
                             </div>
                             <div class="profile-item">
