@@ -91,5 +91,30 @@ document.addEventListener('DOMContentLoaded', async function() {
     btn.innerHTML = '<i class="fas fa-save me-2"></i>Update Profile';
   });
 
+  // Normalize touchpad scrolling behavior
+  document.addEventListener('wheel', (event) => {
+    const isTouchpad = Math.abs(event.deltaY) < 50; // Detect touchpad
+    if (isTouchpad) {
+      event.preventDefault();
+      window.scrollBy({
+        top: event.deltaY,
+        behavior: 'smooth',
+      });
+    }
+  });
+
+  // Prevent unintended scroll behavior
+  const profileContainer = document.querySelector('.profile-card');
+  if (profileContainer) {
+    profileContainer.addEventListener('wheel', (event) => {
+      if (event.deltaY < 0 && profileContainer.scrollTop === 0) {
+        event.preventDefault(); // Prevent scrolling up when at the top
+      }
+      if (event.deltaY > 0 && profileContainer.scrollTop + profileContainer.clientHeight >= profileContainer.scrollHeight) {
+        event.preventDefault(); // Prevent scrolling down when at the bottom
+      }
+    });
+  }
+
   fetchProfile();
 });

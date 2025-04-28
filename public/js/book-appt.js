@@ -715,6 +715,31 @@ document.addEventListener('DOMContentLoaded', function() {
             alert('Calendar event would be created here. Feature coming soon!');
         });
     }
+
+    // Normalize touchpad scrolling behavior
+    document.addEventListener('wheel', (event) => {
+        const isTouchpad = Math.abs(event.deltaY) < 50; // Detect touchpad
+        if (isTouchpad) {
+            event.preventDefault();
+            window.scrollBy({
+                top: event.deltaY,
+                behavior: 'smooth',
+            });
+        }
+    });
+
+    // Prevent unintended scroll behavior
+    const bookingContainer = document.querySelector('.booking-container');
+    if (bookingContainer) {
+        bookingContainer.addEventListener('wheel', (event) => {
+            if (event.deltaY < 0 && bookingContainer.scrollTop === 0) {
+                event.preventDefault(); // Prevent scrolling up when at the top
+            }
+            if (event.deltaY > 0 && bookingContainer.scrollTop + bookingContainer.clientHeight >= bookingContainer.scrollHeight) {
+                event.preventDefault(); // Prevent scrolling down when at the bottom
+            }
+        });
+    }
     
     // Initialize the booking flow
     initBookingFlow();
