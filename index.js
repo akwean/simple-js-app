@@ -74,43 +74,43 @@ async function sendAppointmentEmail(email, appointmentDetails, status, nurseNote
   if (status === 'pending') {
     subject = 'Appointment Booking Confirmation';
     htmlContent = `
-      <h1>Appointment Booking Confirmation</h1>
+      <h1 style="color: #4CAF50;">Appointment Booking Confirmation</h1>
       <p>Thank you for booking an appointment with BUPC Clinic. Here are the details of your appointment:</p>
-      <ul>
-        <li><strong>Date:</strong> ${date}</li>
-        <li><strong>Time:</strong> ${time}</li>
-        <li><strong>Service:</strong> ${service}</li>
-        <li><strong>Status:</strong> Pending (awaiting nurse approval)</li>
-        <li><strong>Confirmation Code:</strong> ${confirmationCode}</li>
-      </ul>
+      <table style="border-collapse: collapse; width: 100%; max-width: 600px; margin: 20px 0;">
+        <tr><td><strong>Date:</strong></td><td>${date}</td></tr>
+        <tr><td><strong>Time:</strong></td><td>${time}</td></tr>
+        <tr><td><strong>Service:</strong></td><td>${service}</td></tr>
+        <tr><td><strong>Status:</strong></td><td>Pending (awaiting nurse approval)</td></tr>
+        <tr><td><strong>Confirmation Code:</strong></td><td>${confirmationCode}</td></tr>
+      </table>
       <p>You will be notified once the nurse reviews your appointment.</p>
     `;
   } else if (status === 'approved') {
     subject = 'Appointment Approved';
     htmlContent = `
-      <h1>Appointment Approved</h1>
+      <h1 style="color: #4CAF50;">Appointment Approved</h1>
       <p>Your appointment has been approved. Please find the details below:</p>
-      <ul>
-        <li><strong>Date:</strong> ${date}</li>
-        <li><strong>Time:</strong> ${time}</li>
-        <li><strong>Service:</strong> ${service}</li>
-        <li><strong>Status:</strong> Approved</li>
-        <li><strong>Confirmation Code:</strong> ${confirmationCode}</li>
-      </ul>
+      <table style="border-collapse: collapse; width: 100%; max-width: 600px; margin: 20px 0;">
+        <tr><td><strong>Date:</strong></td><td>${date}</td></tr>
+        <tr><td><strong>Time:</strong></td><td>${time}</td></tr>
+        <tr><td><strong>Service:</strong></td><td>${service}</td></tr>
+        <tr><td><strong>Status:</strong></td><td>Approved</td></tr>
+        <tr><td><strong>Confirmation Code:</strong></td><td>${confirmationCode}</td></tr>
+      </table>
       <p>Please arrive at least 15 minutes early and bring your ID for verification.</p>
     `;
   } else if (status === 'rejected') {
     subject = 'Appointment Rejected';
     htmlContent = `
-      <h1>Appointment Rejected</h1>
+      <h1 style="color: #FF5722;">Appointment Rejected</h1>
       <p>Unfortunately, your appointment has been rejected. Here are the details:</p>
-      <ul>
-        <li><strong>Date:</strong> ${date}</li>
-        <li><strong>Time:</strong> ${time}</li>
-        <li><strong>Service:</strong> ${service}</li>
-        <li><strong>Status:</strong> Rejected</li>
-        <li><strong>Confirmation Code:</strong> ${confirmationCode}</li>
-      </ul>
+      <table style="border-collapse: collapse; width: 100%; max-width: 600px; margin: 20px 0;">
+        <tr><td><strong>Date:</strong></td><td>${date}</td></tr>
+        <tr><td><strong>Time:</strong></td><td>${time}</td></tr>
+        <tr><td><strong>Service:</strong></td><td>${service}</td></tr>
+        <tr><td><strong>Status:</strong></td><td>Rejected</td></tr>
+        <tr><td><strong>Confirmation Code:</strong></td><td>${confirmationCode}</td></tr>
+      </table>
       <p><strong>Reason for Rejection:</strong> ${nurseNotes || 'No reason provided.'}</p>
       <p>You may book another appointment or contact the clinic for further assistance.</p>
     `;
@@ -795,10 +795,20 @@ app.get('/api/time-slots', (req, res) => {
       '1:00 PM', '2:00 PM', '3:00 PM', '4:00 PM'
     ];
     
-    // Extract booked time slots
-    const bookedSlots = results.map(row => row.time);
+    // Extract booked time slots - normalize by removing leading zeros
+    const bookedSlots = results.map(row => {
+      // Convert to a standard format that removes leading zeros
+      const timeParts = row.time.trim().match(/(\d+):(\d+)\s*([AP]M)/i);
+      if (timeParts) {
+        const [_, hour, minute, period] = timeParts;
+        return `${parseInt(hour)}:${minute} ${period.toUpperCase()}`;
+      }
+      return row.time.trim();
+    });
+    
+    console.log('Normalized booked slots:', bookedSlots); // Debug log
 
-    // Determine available time slots
+    // Determine available time slots 
     const availableSlots = allTimeSlots.filter(slot => !bookedSlots.includes(slot));
 
     console.log('Available slots:', availableSlots); // Debug log
@@ -841,7 +851,10 @@ app.put('/api/appointments/:id/approve', (req, res) => {
   const { id } = req.params;
 
   const getAppointmentQuery = `
-    SELECT a.appointment_date AS date, a.appointment_time AS time, 
+    SELECT a.appointment_id, a.appointment_date AS date, 
+           DATE_FORMAT(a.appointment_date, '%d %M %Y') AS formatted_date,
+           a.appointment_time AS time, 
+           TIME_FORMAT(a.appointment_time, '%h:%i %p') AS formatted_time,
            s.service_name AS service, ac.confirmation_code, u.email
     FROM Appointments a
     JOIN Services s ON a.service_id = s.service_id
@@ -861,6 +874,34 @@ app.put('/api/appointments/:id/approve', (req, res) => {
     }
 
     const appointmentDetails = getResult[0];
+    
+    // Generate a confirmation code if none exists
+    if (!appointmentDetails.confirmation_code) {
+      appointmentDetails.confirmation_code = `BUPC-${new Date().getFullYear()}-${appointmentDetails.appointment_id}`;
+      
+      // Insert the missing confirmation record
+      const insertConfirmationQuery = `
+        INSERT INTO AppointmentConfirmations (appointment_id, confirmation_code)
+        VALUES (?, ?) ON DUPLICATE KEY UPDATE confirmation_code = VALUES(confirmation_code)
+      `;
+      
+      db.query(insertConfirmationQuery, [appointmentDetails.appointment_id, appointmentDetails.confirmation_code], 
+        (confirmErr) => {
+          if (confirmErr) {
+            console.error('Error creating confirmation code:', confirmErr);
+            // Continue anyway - we'll use the generated code
+          }
+        }
+      );
+    }
+    
+    // Use formatted date and time for email
+    const emailDetails = {
+      date: appointmentDetails.formatted_date || appointmentDetails.date,
+      time: appointmentDetails.formatted_time || appointmentDetails.time,
+      service: appointmentDetails.service,
+      confirmationCode: appointmentDetails.confirmation_code
+    };
 
     const approveQuery = `UPDATE Appointments SET status = 'confirmed' WHERE appointment_id = ?`;
     db.query(approveQuery, [id], async (approveErr) => {
@@ -872,7 +913,7 @@ app.put('/api/appointments/:id/approve', (req, res) => {
       try {
         await sendAppointmentEmail(
           appointmentDetails.email,
-          appointmentDetails,
+          emailDetails,
           'approved'
         );
         res.json({ success: true, message: 'Appointment approved and email sent' });
@@ -880,6 +921,9 @@ app.put('/api/appointments/:id/approve', (req, res) => {
         console.error('Error sending approval email:', emailErr);
         res.status(500).json({ error: 'Appointment approved but failed to send email' });
       }
+
+      // Automatically reject conflicting appointments
+      rejectConflictingAppointments(appointmentDetails.date, appointmentDetails.time, id);
     });
   });
 });
@@ -888,9 +932,16 @@ app.put('/api/appointments/:id/approve', (req, res) => {
 app.put('/api/appointments/:id/reject', (req, res) => {
   const { id } = req.params;
   const { nurseNotes } = req.body;
+  
+  // Set a more helpful default reason if none is provided
+  const defaultReason = "Your appointment request couldn't be accommodated at this time. Please try booking for a different date or time.";
+  const rejectionReason = nurseNotes && nurseNotes.trim() ? nurseNotes : defaultReason;
 
   const getAppointmentQuery = `
-    SELECT a.appointment_date AS date, a.appointment_time AS time, 
+    SELECT a.appointment_id, a.appointment_date AS date, 
+           DATE_FORMAT(a.appointment_date, '%d %M %Y') AS formatted_date,
+           a.appointment_time AS time, 
+           TIME_FORMAT(a.appointment_time, '%h:%i %p') AS formatted_time,
            s.service_name AS service, ac.confirmation_code, u.email
     FROM Appointments a
     JOIN Services s ON a.service_id = s.service_id
@@ -910,6 +961,19 @@ app.put('/api/appointments/:id/reject', (req, res) => {
     }
 
     const appointmentDetails = getResult[0];
+    
+    // Generate a confirmation code if none exists
+    if (!appointmentDetails.confirmation_code) {
+      appointmentDetails.confirmation_code = `BUPC-${new Date().getFullYear()}-${appointmentDetails.appointment_id}`;
+    }
+    
+    // Use formatted date and time for email
+    const emailDetails = {
+      date: appointmentDetails.formatted_date || appointmentDetails.date,
+      time: appointmentDetails.formatted_time || appointmentDetails.time,
+      service: appointmentDetails.service,
+      confirmationCode: appointmentDetails.confirmation_code
+    };
 
     const rejectQuery = `UPDATE Appointments SET status = 'cancelled' WHERE appointment_id = ?`;
     db.query(rejectQuery, [id], async (rejectErr) => {
@@ -921,9 +985,9 @@ app.put('/api/appointments/:id/reject', (req, res) => {
       try {
         await sendAppointmentEmail(
           appointmentDetails.email,
-          appointmentDetails,
+          emailDetails,
           'rejected',
-          nurseNotes
+          rejectionReason // Use our better default reason
         );
         res.json({ success: true, message: 'Appointment rejected and email sent' });
       } catch (emailErr) {
@@ -933,6 +997,85 @@ app.put('/api/appointments/:id/reject', (req, res) => {
     });
   });
 });
+
+// Automatically reject conflicting appointments and notify users
+const rejectConflictingAppointments = (appointmentDate, appointmentTime, approvedAppointmentId) => {
+  // First, get all conflicting appointments to send emails
+  const getConflictsQuery = `
+    SELECT a.appointment_id, 
+           DATE_FORMAT(a.appointment_date, '%d %M %Y') AS formatted_date,
+           a.appointment_date,
+           TIME_FORMAT(a.appointment_time, '%h:%i %p') AS formatted_time, 
+           a.appointment_time, 
+           s.service_name, 
+           ac.confirmation_code, 
+           u.email
+    FROM Appointments a
+    JOIN Users u ON a.user_id = u.user_id
+    JOIN Services s ON a.service_id = s.service_id
+    LEFT JOIN AppointmentConfirmations ac ON a.appointment_id = ac.appointment_id
+    WHERE a.appointment_date = ? 
+      AND a.appointment_time = ? 
+      AND a.appointment_id != ? 
+      AND a.status = 'pending'
+  `;
+
+  db.query(getConflictsQuery, [appointmentDate, appointmentTime, approvedAppointmentId], async (getErr, conflicts) => {
+    if (getErr) {
+      console.error('Error fetching conflicting appointments:', getErr);
+      return;
+    }
+
+    console.log(`Found ${conflicts.length} conflicting appointments to reject`);
+
+    // If no conflicts found, return early
+    if (conflicts.length === 0) return;
+
+    // Update all conflicting appointments to cancelled
+    const rejectConflictsQuery = `
+      UPDATE Appointments
+      SET status = 'cancelled' 
+      WHERE appointment_date = ? 
+        AND appointment_time = ? 
+        AND appointment_id != ? 
+        AND status = 'pending'
+    `;
+
+    db.query(rejectConflictsQuery, [appointmentDate, appointmentTime, approvedAppointmentId], async (rejectErr, result) => {
+      if (rejectErr) {
+        console.error('Error rejecting conflicting appointments:', rejectErr);
+        return;
+      }
+
+      console.log(`Conflicting appointments rejected: ${result.affectedRows}`);
+
+      // Send email notifications to all affected users
+      for (const appointment of conflicts) {
+        try {
+          // Generate a confirmation code if none exists
+          if (!appointment.confirmation_code) {
+            appointment.confirmation_code = `BUPC-${new Date().getFullYear()}-${appointment.appointment_id}`;
+          }
+          
+          await sendAppointmentEmail(
+            appointment.email,
+            {
+              date: appointment.formatted_date || appointment.appointment_date,
+              time: appointment.formatted_time || appointment.appointment_time,
+              service: appointment.service_name,
+              confirmationCode: appointment.confirmation_code
+            },
+            'rejected',
+            'This time slot is no longer available as another appointment has been confirmed for this time.'
+          );
+          console.log(`Sent rejection email for conflicting appointment ${appointment.appointment_id}`);
+        } catch (emailErr) {
+          console.error(`Error sending rejection email for appointment ${appointment.appointment_id}:`, emailErr);
+        }
+      }
+    });
+  });
+};
 
 // Updated API route to fetch medical history from the database
 app.get('/api/medical-history', isAuthenticated, (req, res) => {
