@@ -8,6 +8,18 @@ document.addEventListener('DOMContentLoaded', function() {
     const allAppointmentsTable = document.getElementById('allAppointmentsTable');
     const allAppointmentsPagination = document.getElementById('allAppointmentsPagination');
     const toggleAllAppointmentsButton = document.getElementById('toggleAllAppointments');
+    
+    // Add a button for exporting to CSV
+    const exportButton = document.createElement('button');
+    exportButton.className = 'btn btn-sm btn-success ms-2';
+    exportButton.innerHTML = '<i class="fas fa-file-csv me-1"></i> Export CSV';
+    exportButton.id = 'exportAppointmentsBtn';
+    
+    // Find the card header to append the export button
+    const cardHeader = document.querySelector('.all-appointments-section .card-header');
+    if (cardHeader) {
+        cardHeader.appendChild(exportButton);
+    }
 
     let allAppointments = []; // Store all appointments globally
     let filteredAppointments = []; // Store filtered appointments
@@ -528,6 +540,66 @@ document.addEventListener('DOMContentLoaded', function() {
         if (rejectedElement) rejectedElement.textContent = data.rejectedAppointments || 0;
         if (pendingElement) pendingElement.textContent = data.pendingAppointments || 0;
     }
+
+    // Function to convert appointments to CSV format
+    function appointmentsToCSV(appointments) {
+        if (!appointments || !appointments.length) {
+            return 'No data available';
+        }
+        
+        // Define CSV headers
+        const headers = ['Patient Name', 'Date', 'Time', 'Service', 'Status', 'Confirmation Code', 'Notes'];
+        
+        // Create CSV content starting with headers
+        let csvContent = headers.join(',') + '\n';
+        
+        // Add data rows
+        appointments.forEach(appt => {
+            // Proper CSV escaping for fields that might contain commas
+            const patient = `"${appt.patient || ''}"`;
+            const date = `"${new Date(appt.date).toLocaleDateString() || ''}"`;
+            const time = `"${appt.time || ''}"`;
+            const service = `"${appt.service || ''}"`;
+            const status = `"${appt.status || ''}"`;
+            const confirmationCode = `"${appt.confirmation_code || ''}"`;
+            const notes = `"${(appt.notes || '').replace(/"/g, '""')}"`;
+            
+            const row = [patient, date, time, service, status, confirmationCode, notes];
+            csvContent += row.join(',') + '\n';
+        });
+        
+        return csvContent;
+    }
+
+    // Function to download CSV file
+    function downloadCSV(csvContent, filename = 'appointments.csv') {
+        // Create a Blob with the CSV content
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        
+        // Create a download link and trigger the download
+        const link = document.createElement('a');
+        const url = URL.createObjectURL(blob);
+        
+        link.setAttribute('href', url);
+        link.setAttribute('download', filename);
+        link.style.visibility = 'hidden';
+        
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    }
+
+    // Add event listener for export button
+    exportButton.addEventListener('click', () => {
+        // Generate filename with current date
+        const today = new Date();
+        const formattedDate = today.toISOString().split('T')[0]; // YYYY-MM-DD format
+        const filename = `appointments_${formattedDate}.csv`;
+        
+        // Use the current filtered appointments for export
+        const csvContent = appointmentsToCSV(filteredAppointments.length ? filteredAppointments : allAppointments);
+        downloadCSV(csvContent, filename);
+    });
 
     initDashboard();
 });
