@@ -399,6 +399,53 @@ body {
     font-size: 0.95rem;
 }
 
+/* Analytics Styling */
+.stat-card {
+    padding: 1rem;
+    background: #fff;
+    border-radius: 8px;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+    text-align: center;
+    transition: all 0.3s ease;
+}
+
+.stat-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+}
+
+.stat-icon {
+    font-size: 2rem;
+    margin-bottom: 0.5rem;
+    color: #FF9E44;
+}
+
+.stat-icon.success {
+    color: #28a745;
+}
+
+.stat-icon.danger {
+    color: #dc3545;
+}
+
+.stat-icon.warning {
+    color: #ffc107;
+}
+
+.stat-card h5 {
+    font-size: 1rem;
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+    color: #333;
+}
+
+.stat-number {
+    font-size: 1.8rem;
+    font-weight: 700;
+    margin: 0;
+    color: #333;
+}
+
 /* Make responsive */
 @media (max-width: 576px) {
     .profile-grid {

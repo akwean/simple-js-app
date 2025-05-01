@@ -9,6 +9,9 @@ document.addEventListener('DOMContentLoaded', function() {
     const allAppointmentsPagination = document.getElementById('allAppointmentsPagination');
     const toggleAllAppointmentsButton = document.getElementById('toggleAllAppointments');
 
+    let allAppointments = []; // Store all appointments globally
+    let filteredAppointments = []; // Store filtered appointments
+
     // Improved toggle functionality to ensure data is shown when expanded
     toggleAllAppointmentsButton.addEventListener('click', () => {
         const isHidden = allAppointmentsContainer.classList.contains('d-none');
@@ -26,16 +29,18 @@ document.addEventListener('DOMContentLoaded', function() {
     document.getElementById('filterDate').addEventListener('change', filterAppointments);
     document.getElementById('filterStatus').addEventListener('change', filterAppointments);
 
-    let allAppointments = []; // Store all appointments globally
-    let filteredAppointments = []; // Store filtered appointments
-
     async function fetchAppointments() {
         try {
             const response = await fetch('/api/appointments');
             if (!response.ok) throw new Error('Failed to fetch appointments');
-            allAppointments = await response.json(); // Store all appointments globally
-            console.log('Fetched appointments:', allAppointments); // Debug
-            return allAppointments;
+            const data = await response.json();
+            allAppointments = data;
+            filteredAppointments = [...data];
+            
+            // Update analytics counts based on the fetched appointments
+            updateAnalyticsFromAppointments(data);
+            
+            return data;
         } catch (error) {
             console.error('Error fetching appointments:', error);
             return [];
@@ -462,16 +467,66 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Pass the fetched appointments to categorizeAppointments in initDashboard
     async function initDashboard() {
+        // First fetch appointments (this will also update basic analytics)
         await fetchAppointments();
-        filteredAppointments = [...allAppointments]; // Initialize filteredAppointments with a copy of all data
+        
+        // Then categorize and render appointments as before
         const { newAppointments, upcomingAppointments, conflicts } = categorizeAppointments(allAppointments);
-
+        
+        // Render all appointment sections
         renderAppointments(newAppointmentsContainer, newAppointments);
         renderAppointments(upcomingAppointmentsContainer, upcomingAppointments);
         renderAppointments(conflictAppointmentsContainer, conflicts);
         
-        // Make sure the all appointments table is ready to be displayed with data
+        // Make sure all appointments table is ready
         renderAllAppointments(1);
+        
+        // Optionally try to fetch additional analytics from the server
+        try {
+            const response = await fetch('/api/analytics');
+            if (response.ok) {
+                const analyticsData = await response.json();
+                updateAnalyticsCounts(analyticsData);
+            }
+        } catch (error) {
+            console.warn('Could not fetch detailed analytics, using calculated values instead');
+            // Already updated basic analytics from appointments, so this is just for detailed stats
+        }
+    }
+
+    // Calculate analytics counts from the appointments data
+    function updateAnalyticsFromAppointments(appointments) {
+        if (!appointments || !appointments.length) return;
+        
+        // Calculate counts
+        const total = appointments.length;
+        const approved = appointments.filter(a => a.status === 'approved').length;
+        const rejected = appointments.filter(a => a.status === 'rejected' || a.status === 'canceled').length;
+        const pending = appointments.filter(a => a.status === 'pending').length;
+        
+        // Update the UI
+        updateAnalyticsCounts({
+            totalAppointments: total,
+            approvedAppointments: approved,
+            rejectedAppointments: rejected,
+            pendingAppointments: pending
+        });
+    }
+
+    // Simple function to update the analytics counts - no charts
+    function updateAnalyticsCounts(data) {
+        // Update analytics numbers safely
+        if (!data) return;
+        
+        const totalElement = document.getElementById('totalAppointments');
+        const approvedElement = document.getElementById('approvedAppointments');
+        const rejectedElement = document.getElementById('rejectedAppointments');
+        const pendingElement = document.getElementById('pendingAppointments');
+        
+        if (totalElement) totalElement.textContent = data.totalAppointments || 0;
+        if (approvedElement) approvedElement.textContent = data.approvedAppointments || 0;
+        if (rejectedElement) rejectedElement.textContent = data.rejectedAppointments || 0;
+        if (pendingElement) pendingElement.textContent = data.pendingAppointments || 0;
     }
 
     initDashboard();
