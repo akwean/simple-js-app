@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>BUPC Clinic ChatBot</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  <style>
+    body {
+      font-family: 'Poppins', sans-serif;
+      margin: 0;
+      padding: 0;
+      background: linear-gradient(to right, #FFF5EE, #FAEBD7);
+      color: #333;
+    }
+
+    .hero-section {
+      height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      text-align: center;
+      background: linear-gradient(to right, #FF9E44, #FFA862);
+      color: white;
+      padding: 20px;
+    }
+
+    .chat-container {
+      width: 100%;
+      max-width: 800px;
+      background: #fff;
+      padding: 30px;
+      border-radius: 15px;
+      box-shadow: 0px 8px 20px rgba(0, 0, 0, 0.1);
+      color: #333;
+    }
+
+    .chat-box {
+      height: 320px;
+      overflow-y: auto;
+      padding: 15px;
+      border: 1px solid #ddd;
+      border-radius: 10px;
+      background: #f9f9f9;
+      color: #333;
+      text-align: left;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .user-message {
+      text-align: right;
+      background: #FF9E44;
+      color: white;
+      padding: 10px;
+      border-radius: 10px;
+      margin: 5px 0;
+      max-width: 70%;
+      align-self: flex-end;
+      display: inline-block;
+    }
+
+    .ai-message {
+      text-align: left;
+      background: #FAEBD7;
+      color: #333;
+      padding: 10px;
+      border-radius: 10px;
+      margin: 5px 0;
+      max-width: 70%;
+      align-self: flex-start;
+      display: inline-block;
+    }
+
+    .chat-input {
+      display: flex;
+      margin-top: 15px;
+    }
+
+    .chat-input input {
+      flex: 1;
+      padding: 12px;
+      border-radius: 8px;
+      border: 1px solid #ddd;
+    }
+
+    .chat-input button {
+      margin-left: 10px;
+      padding: 12px 25px;
+      border-radius: 8px;
+      border: none;
+      background-color: #FF9E44;
+      color: white;
+      font-weight: bold;
+      transition: background 0.3s ease;
+    }
+
+    .chat-input button:hover {
+      background-color: #FF8C2B;
+    }
+
+    .back-home {
+      position: absolute;
+      top: 20px;
+      left: 20px;
+      z-index: 1000;
+    }
+
+    .back-home a {
+      text-decoration: none;
+      font-size: 1rem;
+      font-weight: bold;
+      color: #fff;
+      background: #FF9E44;
+      padding: 10px 20px;
+      border-radius: 8px;
+      transition: background 0.3s ease;
+    }
+
+    .back-home a:hover {
+      background: #FF8C2B;
+    }
+  </style>
+</head>
+<body>
+  <div class="back-home">
+    <a href="index.html">Back to Home</a>
+  </div>
+
+  <div class="hero-section">
+    <div class="container chat-container">
+      <h3 class="text-center">AI Chat Assistant</h3>
+      <div class="chat-box" id="chatBox">
+        <p class="typing-effect" id="typingText"></p>
+      </div>
+      <div class="chat-input">
+        <input type="text" id="userInput" placeholder="Type a message..." onkeydown="handleKeyPress(event)" />
+        <button onclick="sendMessage()">Send</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const text = "Hello there! I am BUP Artificial Intelligence. What is your concern?";
+    let index = 0;
+    function typeEffect() {
+      if (index < text.length) {
+        document.getElementById("typingText").textContent += text.charAt(index);
+        index++;
+        setTimeout(typeEffect, 50);
+      }
+    }
+    window.onload = typeEffect;
+
+    // Function to handle "Enter" key press
+    function handleKeyPress(event) {
+      if (event.key === "Enter") {
+        sendMessage();
+      }
+    }
+
+    async function sendMessage() {
+      const userInput = document.getElementById("userInput").value;
+      const chatBox = document.getElementById("chatBox");
+      if (!userInput) return;
+
+      const userMessage = document.createElement("p");
+      userMessage.innerHTML = `<strong> </strong> ${userInput}`;
+      userMessage.classList.add("user-message");
+      chatBox.appendChild(userMessage);
+
+      const processingMessage = document.createElement("p");
+      processingMessage.innerHTML = `<strong>BUP AI:</strong> Processing Answer...`;
+      processingMessage.classList.add("ai-message");
+      chatBox.appendChild(processingMessage);
+      document.getElementById("userInput").value = "";
+
+      try {
+        const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+          method: "POST",
+          headers: {
+            "Authorization": "Bearer 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",
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({ "model": "google/gemma-3-1b-it:free", "messages": [{ "role": "user", "content": userInput }] })
+        });
+
+        const data = await response.json();
+        processingMessage.remove();
+
+        const aiMessage = document.createElement("p");
+        aiMessage.innerHTML = `<strong>BUP AI:</strong> ${marked.parse(data.choices?.[0]?.message?.content || "Sorry, I couldn't process that request.")}`;
+        aiMessage.classList.add("ai-message");
+        chatBox.appendChild(aiMessage);
+
+      } catch (error) {
+        processingMessage.remove();
+        const aiError = document.createElement("p");
+        aiError.innerHTML = `<strong>BUP AI:</strong> Error: ${error.message}`;
+        aiError.classList.add("ai-message");
+        chatBox.appendChild(aiError);
+      }
+    }
+  </script>
+</body>
+</html>

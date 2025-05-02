@@ -446,6 +446,116 @@ body {
     color: #333;
 }
 
+/* Enhanced Analytics Section Styling */
+.analytics-section .card {
+    border: none;
+    border-radius: 18px;
+    overflow: hidden;
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.08);
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.analytics-section .card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.12);
+}
+
+.analytics-section .card-header {
+    background: linear-gradient(135deg, #FF9E44, #FFA862);
+    color: white;
+    border: none;
+    padding: 1.2rem 1.5rem;
+    font-weight: 600;
+}
+
+.analytics-section .card-body {
+    padding: 1.5rem;
+    background: #FFFAF5;
+}
+
+.stat-card {
+    background: white;
+    border-radius: 15px;
+    padding: 1.5rem;
+    text-align: center;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+    transition: all 0.3s ease;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    border-bottom: 5px solid transparent;
+}
+
+.stat-card:hover {
+    transform: translateY(-8px);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+}
+
+.stat-icon {
+    font-size: 2.5rem;
+    margin-bottom: 1rem;
+    background: linear-gradient(135deg, #FFF5EE, #FAEBD7);
+    width: 80px;
+    height: 80px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    margin: 0 auto 1rem auto;
+}
+
+/* Use theme colors for icons */
+.stat-icon {
+    color: #FF9E44;
+}
+
+.stat-icon.success {
+    color: #4CAF50;
+}
+
+.stat-icon.danger {
+    color: #F44336;
+}
+
+.stat-icon.warning {
+    color: #FF9800;
+}
+
+.stat-card h5 {
+    font-size: 1.1rem;
+    font-weight: 600;
+    margin-bottom: 0.8rem;
+    color: #444;
+}
+
+.stat-number {
+    font-size: 2.2rem;
+    font-weight: 700;
+    margin: 0;
+    background: -webkit-linear-gradient(#FF9E44, #FFA862);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+/* Themed borders for stat cards */
+.stat-card.total {
+    border-bottom-color: #FF9E44;
+}
+
+.stat-card.approved {
+    border-bottom-color: #4CAF50;
+}
+
+.stat-card.rejected {
+    border-bottom-color: #F44336;
+}
+
+.stat-card.pending {
+    border-bottom-color: #FF9800;
+}
+
 /* Make responsive */
 @media (max-width: 576px) {
     .profile-grid {

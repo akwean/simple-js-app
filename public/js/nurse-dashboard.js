@@ -525,9 +525,9 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    // Simple function to update the analytics counts - no charts
+    // Enhanced function to update analytics counts with animation
     function updateAnalyticsCounts(data) {
-        // Update analytics numbers safely
+        // Update analytics numbers with animation
         if (!data) return;
         
         const totalElement = document.getElementById('totalAppointments');
@@ -535,10 +535,37 @@ document.addEventListener('DOMContentLoaded', function() {
         const rejectedElement = document.getElementById('rejectedAppointments');
         const pendingElement = document.getElementById('pendingAppointments');
         
-        if (totalElement) totalElement.textContent = data.totalAppointments || 0;
-        if (approvedElement) approvedElement.textContent = data.approvedAppointments || 0;
-        if (rejectedElement) rejectedElement.textContent = data.rejectedAppointments || 0;
-        if (pendingElement) pendingElement.textContent = data.pendingAppointments || 0;
+        animateCount(totalElement, data.totalAppointments || 0);
+        animateCount(approvedElement, data.approvedAppointments || 0);
+        animateCount(rejectedElement, data.rejectedAppointments || 0);
+        animateCount(pendingElement, data.pendingAppointments || 0);
+    }
+
+    // Helper function to animate count from 0 to target
+    function animateCount(element, target) {
+        if (!element) return;
+        
+        const duration = 1000; // Animation duration in ms
+        const start = parseInt(element.textContent) || 0;
+        const increment = target > start ? 1 : -1;
+        const range = Math.abs(target - start);
+        const stepTime = Math.abs(Math.floor(duration / range));
+        
+        // Don't animate if the range is too small
+        if (range < 5) {
+            element.textContent = target;
+            return;
+        }
+        
+        let current = start;
+        const timer = setInterval(function() {
+            current += increment;
+            element.textContent = current;
+            
+            if (current == target) {
+                clearInterval(timer);
+            }
+        }, stepTime);
     }
 
     // Function to convert appointments to CSV format
