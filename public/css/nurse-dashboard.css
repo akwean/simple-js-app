@@ -399,53 +399,6 @@ body {
     font-size: 0.95rem;
 }
 
-/* Analytics Styling */
-.stat-card {
-    padding: 1rem;
-    background: #fff;
-    border-radius: 8px;
-    box-shadow: 0 2px 5px rgba(0,0,0,0.05);
-    text-align: center;
-    transition: all 0.3s ease;
-}
-
-.stat-card:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 5px 15px rgba(0,0,0,0.1);
-}
-
-.stat-icon {
-    font-size: 2rem;
-    margin-bottom: 0.5rem;
-    color: #FF9E44;
-}
-
-.stat-icon.success {
-    color: #28a745;
-}
-
-.stat-icon.danger {
-    color: #dc3545;
-}
-
-.stat-icon.warning {
-    color: #ffc107;
-}
-
-.stat-card h5 {
-    font-size: 1rem;
-    font-weight: 600;
-    margin-bottom: 0.5rem;
-    color: #333;
-}
-
-.stat-number {
-    font-size: 1.8rem;
-    font-weight: 700;
-    margin: 0;
-    color: #333;
-}
-
 /* Enhanced Analytics Section Styling */
 .analytics-section .card {
     border: none;
@@ -536,7 +489,9 @@ body {
     margin: 0;
     background: -webkit-linear-gradient(#FF9E44, #FFA862);
     -webkit-background-clip: text;
+    background-clip: text; /* Add standard property for compatibility */
     -webkit-text-fill-color: transparent;
+    color: transparent; /* Fallback for browsers that don't support -webkit-text-fill-color */
 }
 
 /* Themed borders for stat cards */
